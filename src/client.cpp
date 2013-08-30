@@ -59,7 +59,7 @@ void client::run()
     {
         rotation+=0.01;
         this->window->process();
-        //this->events->process_events();
+        this->events->process_events();
         this->window->activate();
         this->graphics->prepare_rendering();
         glMatrixMode(GL_MODELVIEW);

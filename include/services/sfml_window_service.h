@@ -14,9 +14,13 @@ class sfml_window_service : public window_service
         virtual ~sfml_window_service();
         bool is_open();
         void open();
+        void close();
         void activate();
         void finish_frame();
         void process();
+        void set_mouse_pos(float x, float y);
+        void set_mouse_pos(int x, int y);
+        vector2d<unsigned int> get_size();
     protected:
     private:
         sf::Window sfml_window;
