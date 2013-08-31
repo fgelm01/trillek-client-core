@@ -1,7 +1,11 @@
+
+#ifndef MAKE_UNIQUE_H
+#define MAKE_UNIQUE_H
+
 #include <memory>
 #include <type_traits>
 #include <utility>
-namespace std
+namespace trillek
 {
     template <typename T, typename... Args>
     std::unique_ptr<T> make_unique_helper(std::false_type, Args&&... args) {
@@ -22,3 +26,5 @@ namespace std
        return make_unique_helper<T>(std::is_array<T>(), std::forward<Args>(args)...);
     }
 }
+
+#endif // MAKE_UNIQUE_H

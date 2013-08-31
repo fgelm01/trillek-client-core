@@ -15,6 +15,7 @@ class service
         virtual ~service(){};
         virtual void receive_event(std::shared_ptr<event> e){}
         virtual void init(){}
+        client* get_client(){return _client;}
     protected:
         client* _client;
     private:

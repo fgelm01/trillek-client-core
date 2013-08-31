@@ -1,15 +1,21 @@
 #include "services\opengl_graphics_service.h"
 #include "client.h"
+#define GLEW_STATIC
+#include <GL\glew.h>
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <math.h>
+#include "rendering/light_source.h"
+#include "rendering/transformation_node.h"
+#include <assert.h>
+
 namespace trillek
 {
 
-opengl_graphics_service::opengl_graphics_service(client* _client)
-    : graphics_service(_client)
+opengl_graphics_service::opengl_graphics_service(client* _client,
+    render_algorithm* rendering_algorithm, camera* cam)
+    : graphics_service(_client,rendering_algorithm,cam)
 {
-    //ctor
 }
 
 opengl_graphics_service::~opengl_graphics_service()
@@ -19,7 +25,16 @@ opengl_graphics_service::~opengl_graphics_service()
 
 void opengl_graphics_service::prepare_rendering()
 {
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    const float amb = 2.0;
+    const float LightAmbient[][4]  = {  { amb, amb, amb, 1.0f },
+                                        { amb, amb, amb, 1.0f }};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, LightAmbient[0]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 }
 
 void setfrustum(unsigned int fov, double aspect, double n_plane,double f_plane)
@@ -58,6 +73,165 @@ void opengl_graphics_service::init()
     event_service* e_s=this->_client->get_event_service();
     e_s->register_for_event(event::event_type::window_resized,
                             this);
+    input_service* i_s=this->_client->get_input_service();
+    i_s->register_mouse_listener(this->cam);
+
+    GLenum err = glewInit();
+    if (GLEW_OK != err)
+    {
+        /* Problem: glewInit failed, something is seriously wrong. */
+        std::cerr << "Error: Couldn't initialize GLEW because: "
+                  << glewGetErrorString(err) << std::endl;
+        assert(false);
+    }
+}
+
+void opengl_graphics_service::rendering()
+{
+    this->cam->render(this);
+    this->rendering(tree->get_master());
+}
+
+void opengl_graphics_service::do_translation(vector3d<float> trans)
+{
+    glTranslatef(trans.x,trans.y,trans.z);
+}
+
+void opengl_graphics_service::rendering(render_tree_node* node)
+{
+    if(node)
+    {
+        if(node->get_render_type()==render_tree_node::voxel_node)
+        {
+            if(((voxel_model*)node)->needs_redraw() ||
+               !this->is_model_registered((uintptr_t)node))
+            {
+                this->rendering_algorithm->process((voxel_model*)node,this);
+            }else
+            {
+                this->recall_model((uintptr_t)node);
+            }
+        }else if(node->get_render_type()==render_tree_node::light_node)
+        {
+            auto light=(light_source*)node;
+            this->render_light(light->get_settings());
+        }else if(node->get_render_type()==render_tree_node::transformation_node)
+        {
+            auto trans=(transformation_node*)(node);
+            this->do_translation(trans->get_transformation());
+        }
+        for(int i=0; i<node->get_num_childs();++i)
+        {
+            this->rendering(node->get_child(i));
+        }
+    }
+}
+
+void opengl_graphics_service::render_light(light_settings options)
+{
+    GLfloat pos[] = {0, 0, 0, 1};
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+}
+
+void opengl_graphics_service::drawPolygon(  vector3d<float>& v1,
+                                            vector3d<float>& v2,
+                                            vector3d<float>& v3,
+                                            bool automatic_normal)
+{
+    glBegin(GL_TRIANGLES);
+        if(automatic_normal)
+            this->generate_normal(v1,v2,v3);
+        glVertex3f(v1.x,v1.y,v1.z);
+        glVertex3f(v2.x,v2.y,v2.z);
+        glVertex3f(v3.x,v3.y,v3.z);
+    glEnd();
+}
+
+void opengl_graphics_service::generate_normal(   vector3d<float>& v1,
+                        vector3d<float>& v2,
+                        vector3d<float>& v3)
+{
+    vector3d<float> normal=calculate_normal(v1,v2,v3);
+    set_normal(normal);
+}
+
+void opengl_graphics_service::set_normal(   vector3d<float>& n)
+{
+    glNormal3f(n.x,n.y,n.z);
+}
+
+vector3d<float> opengl_graphics_service::calculate_normal(vector3d<float>& v1,
+                                                          vector3d<float>& v2,
+                                                          vector3d<float>& v3)
+{
+    vector3d<float> u = v2-v1;
+    vector3d<float> v = v3-v1;
+
+    return vector3d<float>(
+                    u.y*v.z-u.z*v.y,
+                    u.z*v.x-u.x*v.z,
+                    u.x*v.y-u.y*v.x
+                    );
+}
+
+void opengl_graphics_service::do_rotation_x(float rot)
+{
+    glRotatef(rot,1,0,0);
+}
+
+void opengl_graphics_service::do_rotation_y(float rot)
+{
+    glRotatef(rot,0,1,0);
+}
+
+void opengl_graphics_service::do_rotation_z(float rot)
+{
+    glRotatef(rot,0,0,1);
+}
+
+void opengl_graphics_service::register_model(uintptr_t ID,
+                                             std::shared_ptr<mesh_data> data)
+{
+    model_recall_data recall_data;
+
+
+    // Indices Data
+    std::vector<unsigned int>* indices=data->get_indices();
+    glGenBuffers(1,&recall_data.indices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recall_data.indices);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 indices->size()*sizeof(unsigned int),
+                 &(*indices)[0], GL_STATIC_DRAW);
+    recall_data.size=indices->size();
+
+    // Vertex Data
+    std::vector<vertex_data>* vertices=data->get_vertex_data();
+    glGenBuffers(1,&recall_data.vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, recall_data.vertices);
+    glBufferData(GL_ARRAY_BUFFER,
+                 vertices->size()*sizeof(vertex_data),
+                 &(*vertices)[0], GL_STATIC_DRAW);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, sizeof(vertex_data), 0);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT, sizeof(vertex_data), (void*)12);
+
+    this->model_recall_buffer[ID] = recall_data;
+}
+
+bool opengl_graphics_service::is_model_registered(uintptr_t ID)
+{
+    return this->model_recall_buffer.find(ID)!=this->model_recall_buffer.end();
+}
+
+void opengl_graphics_service::recall_model(uintptr_t ID)
+{
+    model_recall_data recall_data=this->model_recall_buffer[ID];
+
+    glBindBuffer(GL_ARRAY_BUFFER, recall_data.vertices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recall_data.indices);
+    glDrawElements(GL_TRIANGLES, recall_data.size, GL_UNSIGNED_INT, 0);
 }
 
 }

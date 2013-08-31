@@ -52,17 +52,26 @@ void input_service::mouse_move(std::shared_ptr<mouse_move_event> e)
     if(trap_mouse){
         window_service* w_s=this->_client->get_window_service();
         vector2d<unsigned int> s=w_s->get_size();
-        int dx=e->x-s[0]/2;
-        int dy=e->y-s[1]/2;
+        int dx=e->x-s.x/2;
+        int dy=e->y-s.y/2;
         if((dx!=0 ||dy!=0))
         {
             w_s->set_mouse_pos(0.5f,0.5f);
-            //std::cerr <<
-            //"Mouse moved by: " << dx << "/" << dy << std::endl;
+        }
+
+        for(auto listener : mouse_listeners)
+        {
+            listener->mouse_listen(dx,dy);
         }
     }else
     {
     }
+}
+
+void input_service::register_mouse_listener(
+                            std::shared_ptr<mouse_listener> listener)
+{
+    mouse_listeners.push_back(listener);
 }
 
 }

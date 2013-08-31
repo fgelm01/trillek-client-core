@@ -6,8 +6,10 @@ set(CMAKE_MODULE_PATH ${trillek-client-core_SOURCE_DIR}/cmake)
 set(TRILLEK_INCLUDE_DIR ${trillek-client-core_SOURCE_DIR}/include)
 
 find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
 
 include(SFML)
+include(GLEW)
 message(STATUS ${PROJECT_SOURCE_DIR})
 message(STATUS ${PROJECT_BINARY_DIR})
 message(STATUS "Adding Source and Header Files")
@@ -30,11 +32,13 @@ if(src_list)
 		${TRILLEK_INCLUDE_DIR}
 		${OPENGL_INCLUDE_DIR}
 		${SFML_INCLUDE_DIR}
+		${GLEW_INCLUDE_DIR}
 	)
 
 	target_link_libraries(trillek-client-core
 		${OPENGL_LIBRARIES}
 		${SFML_LIBS}
+		${GLEW_LIBS}
 	)
 	set_target_properties(trillek-client-core PROPERTIES LINKER_LANGUAGE CXX)
 	SET(CMAKE_CXX_FLAGS "-std=c++0x")

@@ -7,6 +7,8 @@
 #include "services\sfml_window_service.h"
 #include <SFML/OpenGL.hpp>
 #include "services\cust_settings_service.h"
+#include "rendering\marching_cubes_render_algorithm.h"
+#include "rendering\first_person_camera.h"
 
 namespace trillek
 {
@@ -14,11 +16,14 @@ namespace trillek
 client::client()
 {
     // TODO: Abstract this out
-    this->events = std::make_unique<event_service>(this);
-    this->graphics = std::make_unique<opengl_graphics_service>(this);
-    this->input = std::make_unique<input_service>(this);
-    this->settings = std::make_unique<cust_settings_service>(this);
-    this->window = std::make_unique<sfml_window_service>(this);
+    auto algorithm=new marching_cubes_render_algorithm();
+    auto camera=new first_person_camera();
+    this->events = trillek::make_unique<event_service>(this);
+    this->graphics = trillek::make_unique<opengl_graphics_service>(this,
+                        algorithm,camera);
+    this->input = trillek::make_unique<input_service>(this);
+    this->settings = trillek::make_unique<cust_settings_service>(this);
+    this->window = trillek::make_unique<sfml_window_service>(this);
 
     this->events->init();
     this->graphics->init();
@@ -54,52 +59,12 @@ void client::run()
     this->window->open();
 
     // Main cycle
-    float rotation=0;
     while(this->window->is_open())
     {
-        rotation+=0.01;
         this->window->process();
         this->events->process_events();
         this->window->activate();
-        this->graphics->prepare_rendering();
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glTranslatef(0.f, 0.f, -200.f);
-        glRotatef(rotation,0,1,0);
-        glBegin(GL_QUADS);
-
-            glVertex3f(-50.f, -50.f, -50.f);
-            glVertex3f(-50.f,  50.f, -50.f);
-            glVertex3f( 50.f,  50.f, -50.f);
-            glVertex3f( 50.f, -50.f, -50.f);
-
-            glVertex3f(-50.f, -50.f, 50.f);
-            glVertex3f(-50.f,  50.f, 50.f);
-            glVertex3f( 50.f,  50.f, 50.f);
-            glVertex3f( 50.f, -50.f, 50.f);
-
-            glVertex3f(-50.f, -50.f, -50.f);
-            glVertex3f(-50.f,  50.f, -50.f);
-            glVertex3f(-50.f,  50.f,  50.f);
-            glVertex3f(-50.f, -50.f,  50.f);
-
-            glVertex3f(50.f, -50.f, -50.f);
-            glVertex3f(50.f,  50.f, -50.f);
-            glVertex3f(50.f,  50.f,  50.f);
-            glVertex3f(50.f, -50.f,  50.f);
-
-            glVertex3f(-50.f, -50.f,  50.f);
-            glVertex3f(-50.f, -50.f, -50.f);
-            glVertex3f( 50.f, -50.f, -50.f);
-            glVertex3f( 50.f, -50.f,  50.f);
-
-            glVertex3f(-50.f, 50.f,  50.f);
-            glVertex3f(-50.f, 50.f, -50.f);
-            glVertex3f( 50.f, 50.f, -50.f);
-            glVertex3f( 50.f, 50.f,  50.f);
-
-        glEnd();
-        //this->graphics->end_rendering();
+        this->graphics->render();
         this->window->finish_frame();
     }
 }
