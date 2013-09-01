@@ -1,14 +1,14 @@
 #include "client.h"
 #include <iostream>
 #include "make_unique.h"
-#include "services\event_service.h"
-#include "services\opengl_graphics_service.h"
-#include "services\input_service.h"
-#include "services\sfml_window_service.h"
+#include "services/event_service.h"
+#include "services/opengl_graphics_service.h"
+#include "services/input_service.h"
+#include "services/sfml_window_service.h"
 #include <SFML/OpenGL.hpp>
-#include "services\cust_settings_service.h"
-#include "rendering\marching_cubes_render_algorithm.h"
-#include "rendering\first_person_camera.h"
+#include "services/cust_settings_service.h"
+#include "rendering/marching_cubes_render_algorithm.h"
+#include "rendering/first_person_camera.h"
 
 namespace trillek
 {

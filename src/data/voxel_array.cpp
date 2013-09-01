@@ -48,4 +48,8 @@ void voxel_array::reserve_space(unsigned int w,
     }
 }
 
+voxel_octree voxel_array::to_octree()
+{
+}
+
 }

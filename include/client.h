@@ -1,12 +1,12 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include <memory>
-#include "services\event_service.h"
-#include "services\graphics_service.h"
-#include "services\input_service.h"
-#include "services\window_service.h"
-#include "services\settings_service.h"
-#include "services\asset_service.h"
+#include "services/event_service.h"
+#include "services/graphics_service.h"
+#include "services/input_service.h"
+#include "services/window_service.h"
+#include "services/settings_service.h"
+#include "services/asset_service.h"
 #include <iostream>
 namespace trillek
 {

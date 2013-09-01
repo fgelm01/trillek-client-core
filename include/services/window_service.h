@@ -1,7 +1,7 @@
 #ifndef WINDOW_SERVICE_H
 #define WINDOW_SERVICE_H
 
-#include "services\service.h"
+#include "services/service.h"
 #include "math/vector.h"
 
 namespace trillek

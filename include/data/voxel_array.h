@@ -2,6 +2,7 @@
 #define VOXEL_ARRAY_H
 
 #include "data/voxel_data.h"
+#include "data/voxel_octree.h"
 
 namespace trillek
 {
@@ -22,6 +23,7 @@ class voxel_array : public voxel_data
         void reserve_space( unsigned int w,
                             unsigned int h,
                             unsigned int d);
+        voxel_octree to_octree();
     protected:
         vector3d<unsigned int> size;
         std::vector<std::vector<std::vector<voxel>>> data;

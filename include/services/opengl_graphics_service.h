@@ -1,8 +1,8 @@
 #ifndef OPENGL_GRAPHICS_SERVICE_H
 #define OPENGL_GRAPHICS_SERVICE_H
 
-#include "services\graphics_service.h"
-#include "rendering\camera.h"
+#include "services/graphics_service.h"
+#include "rendering/camera.h"
 namespace trillek
 {
 

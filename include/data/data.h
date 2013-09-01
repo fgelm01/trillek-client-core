@@ -11,7 +11,8 @@ class data
         {
             dt_nothing,
             dt_mesh,
-            dt_voxel
+            dt_voxel_array,
+            dt_voxel_octree
         };
 
         data(){};

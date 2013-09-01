@@ -3,8 +3,8 @@
 
 #include <map>
 #include <vector>
-#include "services\service.h"
-#include "services\event_service_events.h"
+#include "services/service.h"
+#include "services/event_service_events.h"
 
 namespace trillek
 {

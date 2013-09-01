@@ -1,7 +1,7 @@
 #ifndef CUST_SETTINGS_SERVICE_H
 #define CUST_SETTINGS_SERVICE_H
 
-#include "services\settings_service.h"
+#include "services/settings_service.h"
 
 namespace trillek
 {

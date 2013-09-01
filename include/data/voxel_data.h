@@ -22,8 +22,7 @@ class voxel_data
                                unsigned int y,
                                unsigned int z,
                                voxel v)=0;
-        virtual data_type get_type(){return dt_voxel;}
-        virtual void reserve_space(unsigned int,unsigned int,unsigned int)=0;
+        data_type get_type(){return dt_voxel_octree;}
     protected:
     private:
 };

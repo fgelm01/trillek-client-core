@@ -1,7 +1,7 @@
 #ifndef SETTINGS_SERVICE_H
 #define SETTINGS_SERVICE_H
 
-#include "services\service.h"
+#include "services/service.h"
 #include <string>
 #include <map>
 
