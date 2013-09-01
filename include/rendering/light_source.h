@@ -22,6 +22,7 @@ class light_source : public render_tree_node
         light_source(float r, float g, float b);
         virtual ~light_source();
         node_type get_render_type(){return node_type::light_node;}
+        render_data* get_render_data() override {return nullptr;}
         light_settings get_settings();
     protected:
     private:

@@ -30,11 +30,11 @@ int main(int argc, char **argv)
         }else
         {
             std::cerr << "Couldn't load test.voxels, creating standard room" << std::endl;
-            for(int x=0;x<size;x++)
+            for(std::size_t x=0;x<size;x++)
             {
-                for(int z=0;z<size;z++)
+                for(std::size_t z=0;z<size;z++)
                 {
-                    for(int y=0;y<size;y++)
+                    for(std::size_t y=0;y<size;y++)
                     {
                         v_m->set_voxel(x,0,z,trillek::voxel(true,true));
                         v_m->set_voxel(x,size-1,z,trillek::voxel(true,true));

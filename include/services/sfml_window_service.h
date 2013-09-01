@@ -12,15 +12,16 @@ class sfml_window_service : public window_service
     public:
         sfml_window_service(client* _client);
         virtual ~sfml_window_service();
-        bool is_open();
-        void open();
-        void close();
-        void activate();
-        void finish_frame();
-        void process();
-        void set_mouse_pos(float x, float y);
-        void set_mouse_pos(int x, int y);
-        vector2d<unsigned int> get_size();
+        bool is_open() override;
+        void open() override;
+        void close() override;
+        void activate() override;
+        void finish_frame() override;
+        void process() override;
+        void set_mouse_pos(float x, float y) override;
+        void set_mouse_pos(int x, int y) override;
+        vector2d<unsigned int> get_size() override;
+        void receive_event(event_shared_ptr) override {}
     protected:
     private:
         sf::Window sfml_window;

@@ -4,6 +4,7 @@
 #include "services/service.h"
 #include "services/mouse_button_codes.h"
 #include "services/key_codes.h"
+#include <memory>
 
 namespace trillek
 {
@@ -20,6 +21,8 @@ struct event
     };
     virtual event_type get_type()=0;
 };
+
+typedef std::shared_ptr<event> event_shared_ptr;
 
 struct window_resized_event
     : event
