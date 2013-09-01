@@ -5,26 +5,44 @@
 #include "rendering/light_source.h"
 #include "rendering/transformation_node.h"
 #include <iostream>
+#include <math.h>
+#include "services\asset_service.h"
+#include "asset_loaders/basic_voxel_asset_loader.h"
 
 int main(int argc, char **argv)
 {
     trillek::client client;
+
     // Some test-code to load/create something to test the rendering with
-        trillek::graphics_service* g_s=client.get_graphics_service();
+        trillek::graphics_service* g_s = client.get_graphics_service();
         trillek::render_tree* r_t = g_s->get_render_tree();
-        unsigned int size=100;
+        trillek::asset_service* a_s = client.get_asset_service();
+        //basic_voxel_asset_loader* bval=new basic_voxel_asset_loader();
+        a_s->register_asset_loader("voxels",new trillek::basic_voxel_asset_loader());
+
+        unsigned int size=50;
         auto v_m=std::make_shared<trillek::voxel_model>(size,size,size);
         std::cerr << "Starting Construction" << std::endl;
-        for(int x=0;x<size;x++)
+        trillek::voxel_data* v_d=(trillek::voxel_data*)a_s->load("test.voxels");
+        if(v_d!=NULL)
         {
-            for(int y=0;y<size;y++)
+            v_m->set_render_data(v_d);
+        }else
+        {
+            std::cerr << "Couldn't load test.voxels, creating standard room" << std::endl;
+            for(int x=0;x<size;x++)
             {
                 for(int z=0;z<size;z++)
                 {
-                    v_m->set_voxel(x,0,z,trillek::voxel(true,true));
-                    v_m->set_voxel(x,size-1,z,trillek::voxel(true,true));
-                    v_m->set_voxel(0,x,z,trillek::voxel(true,true));
-                    v_m->set_voxel(size-1,x,z,trillek::voxel(true,true));
+                    for(int y=0;y<size;y++)
+                    {
+                        v_m->set_voxel(x,0,z,trillek::voxel(true,true));
+                        v_m->set_voxel(x,size-1,z,trillek::voxel(true,true));
+                        v_m->set_voxel(0,x,z,trillek::voxel(true,true));
+                        v_m->set_voxel(size-1,x,z,trillek::voxel(true,true));
+                        v_m->set_voxel(x,y,0,trillek::voxel(true,true));
+                        v_m->set_voxel(x,y,size-1,trillek::voxel(true,true));
+                    }
                 }
             }
         }
@@ -36,7 +54,8 @@ int main(int argc, char **argv)
 
         trans->add_child(light);
         r_t->get_master()->add_child(trans);
-        // test-code end
+    // test-code end
+
     client.run();
     return 0;
 }

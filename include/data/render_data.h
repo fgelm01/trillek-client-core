@@ -1,10 +1,12 @@
 #ifndef RENDER_DATA_H
 #define RENDER_DATA_H
+#include "data/data.h"
 
 namespace trillek
 {
 
 class render_data
+    : public data
 {
     public:
         render_data();

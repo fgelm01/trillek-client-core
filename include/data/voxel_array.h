@@ -19,6 +19,9 @@ class voxel_array : public voxel_data
                         unsigned int y,
                         unsigned int z,
                         voxel v);
+        void reserve_space( unsigned int w,
+                            unsigned int h,
+                            unsigned int d);
     protected:
         vector3d<unsigned int> size;
         std::vector<std::vector<std::vector<voxel>>> data;

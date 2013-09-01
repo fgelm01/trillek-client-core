@@ -1,20 +1,12 @@
 #include "data/voxel_array.h"
-
+#include <iostream>
 namespace trillek
 {
 
 voxel_array::voxel_array(unsigned int w, unsigned int h, unsigned int d)
     : size(w,h,d)
 {
-    this->data.resize(w);
-    for(int x=0;x<w;++x)
-    {
-        this->data[x].resize(h);
-        for(int y=0;y<h;++y)
-        {
-            this->data[x][y].resize(d);
-        }
-    }
+    reserve_space(w,h,d);
 }
 
 voxel_array::~voxel_array()
@@ -39,6 +31,21 @@ void voxel_array::set_voxel(unsigned int x,
                             voxel v)
 {
     this->data[x][y][z]=v;
+}
+
+void voxel_array::reserve_space(unsigned int w,
+                                unsigned int h,
+                                unsigned int d)
+{
+    this->data.resize(w);
+    for(int x=0;x<w;++x)
+    {
+        this->data[x].resize(h);
+        for(int y=0;y<h;++y)
+        {
+            this->data[x][y].resize(d);
+        }
+    }
 }
 
 }

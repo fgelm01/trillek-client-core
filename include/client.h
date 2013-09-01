@@ -6,6 +6,7 @@
 #include "services\input_service.h"
 #include "services\window_service.h"
 #include "services\settings_service.h"
+#include "services\asset_service.h"
 #include <iostream>
 namespace trillek
 {
@@ -21,6 +22,7 @@ class client
         input_service* get_input_service(){return input.get();}
         settings_service* get_settings_service(){return settings.get();}
         window_service* get_window_service(){return window.get();}
+        asset_service* get_asset_service(){return assets.get();}
     protected:
     private:
         std::unique_ptr<client> self;
@@ -29,6 +31,7 @@ class client
         std::unique_ptr<input_service> input;
         std::unique_ptr<settings_service> settings;
         std::unique_ptr<window_service> window;
+        std::unique_ptr<asset_service> assets;
 
         bool all_loaded();
 };

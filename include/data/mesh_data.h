@@ -15,7 +15,7 @@ struct vertex_data
     float s0,t0;        // Texture
 };
 
-class mesh_data : public render_tree_node
+class mesh_data : public render_data
 {
     using vec= std::tuple<float,float,float>;
     public:
@@ -27,6 +27,8 @@ class mesh_data : public render_tree_node
                          bool auto_normal=true);
         std::vector<unsigned int>* get_indices(){return &indices_buffer;}
         std::vector<vertex_data>* get_vertex_data();
+        void resize_buffers(unsigned int new_size);
+        virtual data_type get_type(){return dt_mesh;}
     protected:
     private:
         unsigned int num_vertices;

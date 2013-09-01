@@ -33,6 +33,12 @@ std::vector<vertex_data>* mesh_data::get_vertex_data()
     return &vertex_data_buffer;
 }
 
+void mesh_data::resize_buffers(unsigned int new_size)
+{
+    indices_buffer.reserve(new_size*3);
+    normal_buffer.reserve(new_size);
+}
+
 void mesh_data::add_Polygon(vector3d<float> _v1,
                              vector3d<float> _v2,
                              vector3d<float> _v3,

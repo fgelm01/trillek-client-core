@@ -24,12 +24,14 @@ client::client()
     this->input = trillek::make_unique<input_service>(this);
     this->settings = trillek::make_unique<cust_settings_service>(this);
     this->window = trillek::make_unique<sfml_window_service>(this);
+    this->assets = trillek::make_unique<asset_service>(this);
 
     this->events->init();
     this->graphics->init();
     this->input->init();
     this->settings->init();
     this->window->init();
+    this->assets->init();
 
     settings->load("test.cfg");
 }
@@ -46,6 +48,7 @@ bool client::all_loaded()
     if(!this->input) return false;
     if(!this->settings) return false;
     if(!this->window) return false;
+    if(!this->assets) return false;
     return true;
 }
 
