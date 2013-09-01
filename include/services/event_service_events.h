@@ -1,9 +1,9 @@
 #ifndef EVENT_SERVICE_EVENTS_H
 #define EVENT_SERVICE_EVENTS_H
 
-#include "services\service.h"
-#include "services\mouse_button_codes.h"
-#include "services\key_codes.h"
+#include "services/service.h"
+#include "services/mouse_button_codes.h"
+#include "services/key_codes.h"
 
 namespace trillek
 {

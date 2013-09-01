@@ -6,7 +6,7 @@
 #include "rendering/transformation_node.h"
 #include <iostream>
 #include <math.h>
-#include "services\asset_service.h"
+#include "services/asset_service.h"
 #include "asset_loaders/basic_voxel_asset_loader.h"
 
 int main(int argc, char **argv)

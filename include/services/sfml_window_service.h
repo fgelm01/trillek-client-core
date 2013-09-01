@@ -1,8 +1,8 @@
 #ifndef SFML_WINDOW_SERVICE_H
 #define SFML_WINDOW_SERVICE_H
 
-#include <SFML\Window.hpp>
-#include "services\window_service.h"
+#include <SFML/Window.hpp>
+#include "services/window_service.h"
 
 namespace trillek
 {

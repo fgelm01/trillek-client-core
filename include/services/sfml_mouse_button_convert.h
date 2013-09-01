@@ -2,7 +2,7 @@
 #ifndef SFML_MOUSE_BUTTON_CONVERT_H
 #define SFML_MOUSE_BUTTON_CONVERT_H
 
-#include "services\mouse_button_codes.h"
+#include "services/mouse_button_codes.h"
 #include <SFML/Window.hpp>
 
 namespace trillek

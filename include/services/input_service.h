@@ -1,9 +1,9 @@
 #ifndef INPUT_SERVICE_H
 #define INPUT_SERVICE_H
 
-#include "services\service.h"
-#include "services\key_codes.h"
-#include "services\mouse_listener.h"
+#include "services/service.h"
+#include "services/key_codes.h"
+#include "services/mouse_listener.h"
 #include <vector>
 
 namespace trillek

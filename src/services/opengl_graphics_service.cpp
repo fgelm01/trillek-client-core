@@ -1,7 +1,7 @@
-#include "services\opengl_graphics_service.h"
+#include "services/opengl_graphics_service.h"
 #include "client.h"
 #define GLEW_STATIC
-#include <GL\glew.h>
+#include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <math.h>

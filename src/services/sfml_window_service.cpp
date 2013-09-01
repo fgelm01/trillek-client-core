@@ -1,8 +1,8 @@
-#include "services\sfml_window_service.h"
-#include "services\settings_service.h"
-#include "services\sfml_key_convert.h"
-#include "services\sfml_mouse_button_convert.h"
-#include "services\event_service_events.h"
+#include "services/sfml_window_service.h"
+#include "services/settings_service.h"
+#include "services/sfml_key_convert.h"
+#include "services/sfml_mouse_button_convert.h"
+#include "services/event_service_events.h"
 #include "client.h"
 
 namespace trillek
