@@ -42,7 +42,7 @@ void mesh_data::resize_buffers(unsigned int new_size)
 void mesh_data::add_Polygon(vector3d<float> _v1,
                              vector3d<float> _v2,
                              vector3d<float> _v3,
-                             bool auto_normal)
+                             bool /*auto_normal*/)
 {
     vec v1=vec(_v1.x,_v1.y,_v1.z);
     vec v2=vec(_v2.x,_v2.y,_v2.z);

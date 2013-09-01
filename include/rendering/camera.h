@@ -15,6 +15,7 @@ class camera : public render_tree_node, public mouse_listener
     public:
         camera();
         virtual ~camera();
+        virtual render_data* get_render_data() override {return nullptr;}
         virtual void render(graphics_service* service)=0;
     protected:
     private:

@@ -17,8 +17,8 @@ class first_person_camera : public camera
         void render(graphics_service* service);
     protected:
     private:
-        vector3d<float> pos;
         vector2d<float> rot;
+        vector3d<float> pos;
 };
 
 }

@@ -21,10 +21,11 @@ class render_tree_node
         };
         render_tree_node(){};
         virtual ~render_tree_node(){};
-        virtual node_type get_render_type(){return grouping_node;};
-        virtual render_data* get_render_data(){return NULL;};
-        unsigned int get_num_childs();
-        render_tree_node* get_child(unsigned int index);
+        virtual node_type get_render_type(){return grouping_node;}
+        virtual render_data* get_render_data(){return nullptr;}
+        std::size_t get_num_childs() const;
+        render_tree_node* get_child(std::size_t index);
+        render_tree_node const* get_child(std::size_t index) const;
         void add_child(std::shared_ptr<render_tree_node> new_child);
 
     protected:

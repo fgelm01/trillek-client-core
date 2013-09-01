@@ -14,7 +14,7 @@ class transformation_node :
         transformation_node(float x, float y, float z);
         virtual ~transformation_node();
         node_type get_render_type(){return node_type::transformation_node;}
-
+        render_data* get_render_data() override {return nullptr;}
         vector3d<float> get_transformation();
     protected:
     private:

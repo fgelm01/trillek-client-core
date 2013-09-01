@@ -17,7 +17,7 @@ class event_service : public service
 
         void send_event(std::shared_ptr<event> e);
         void register_for_event(event::event_type type, service* who);
-        void receive_event(std::shared_ptr<event> e){}
+        void receive_event(std::shared_ptr<event> /*e*/){}
         void process_events();
     protected:
     private:
