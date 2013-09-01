@@ -26,6 +26,7 @@ class settings_service : public service
         settings_service(client* _client);
         virtual ~settings_service(){};
         std::shared_ptr<setting> get(std::string name);
+        virtual void receive_event(event_shared_ptr) override {}
         virtual void load(std::string file)=0;
     protected:
         std::shared_ptr<setting> master;

@@ -14,14 +14,14 @@ class voxel_data
     public:
         voxel_data(){};
         virtual ~voxel_data(){};
-        virtual vector3d<unsigned int> get_size()=0;
-        virtual voxel get_voxel(unsigned int x,
-                                 unsigned int y,
-                                 unsigned int z)=0;
-        virtual void set_voxel(unsigned int x,
-                               unsigned int y,
-                               unsigned int z,
-                               voxel v)=0;
+        virtual vector3d<std::size_t> get_size() const = 0;
+        virtual voxel get_voxel(std::size_t x,
+                                 std::size_t y,
+                                 std::size_t z) const = 0;
+        virtual void set_voxel(std::size_t x,
+                               std::size_t y,
+                               std::size_t z,
+                               voxel v) = 0;
         data_type get_type(){return dt_voxel_octree;}
     protected:
     private:

@@ -17,6 +17,7 @@ class asset_service : public service
         data* load(std::string file);
         void register_asset_loader(std::string extension,
                                    asset_loader* new_asset_loader);
+        void receive_event(event_shared_ptr) override {}
     protected:
     private:
         std::map<std::string,std::shared_ptr<asset_loader>> asset_loaders;

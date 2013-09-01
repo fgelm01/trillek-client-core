@@ -1,7 +1,13 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef TRILLEK_ELDALAR_VECTOR_H
+#define TRILLEK_ELDALAR_VECTOR_H
+/*
+ * You never know how many vector.h exist out there
+ * so make your include guards somewhat unique
+ */
 #include <vector>
-#include <math.h>
+#include <cmath>
+#include <functional>
+#include <type_traits>
 
 namespace trillek
 {
@@ -15,27 +21,13 @@ struct vector2d
 template<typename T>
 struct vector3d
 {
-    T x,y,z;
-    vector3d(){this->x=0;this->y=0;this->z=0;};
-    vector3d(T x,T y,T z){this->x=x;this->y=y;this->z=z;};
-    vector3d<T> operator+(vector3d<T> other)
-    {
-        return vector3d<T>(this->x+other.x,
-                           this->y+other.y,
-                           this->z+other.z);
-    }
-    vector3d<T> operator-(vector3d<T> other)
-    {
-        return vector3d<T>(this->x-other.x,
-                           this->y-other.y,
-                           this->z-other.z);
-    }
-    vector3d<T> operator/(float other)
-    {
-        return vector3d<T>(this->x/other,
-                           this->y/other,
-                           this->z/other);
-    }
+    typedef T value_type;
+    value_type x,y,z;
+    vector3d() : x(0), y(0), z(0) {}
+    template <typename U>
+    vector3d(U x,U y,U z) : x(x), y(y), z(z) {}
+    template <typename U>
+    vector3d(const vector3d<U>& other) : x(other.x), y(other.y), z(other.z) {}
     vector3d<T> cross(vector3d<float> other)
     {
         return vector3d<T>( (this->y*other.z)-(this->z*other.y),
@@ -53,13 +45,76 @@ struct vector3d
                             this->y/length,
                             this->z/length);
     }
-    void operator/=(float other)
-    {
-        this->x/=other;
-        this->y/=other;
-        this->z/=other;
-    }
 };
+
+template <typename T>
+vector3d<T> make_vector3d(T&& x, T&& y, T&& z) {
+    return vector3d<T>(std::forward<T>(x), 
+                       std::forward<T>(y), 
+                       std::forward<T>(z));
+}
+
+template <typename T>
+vector3d<T> operator -(const vector3d<T> rhs) {
+    return make_vector3d(-rhs.x, -rhs.y, -rhs.z);
+}
+
+template <typename T, typename U>
+vector3d<T>& operator +=(vector3d<T>& lhs, const vector3d<U>& rhs) {
+    lhs.x += rhs.x;
+    lhs.y += rhs.y;
+    lhs.z += rhs.z;
+    return lhs;
+}
+template <typename T, typename U>
+vector3d<T>& operator -=(vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs += (-rhs);
+}
+template <typename T, typename U>
+vector3d<T>& operator *=(vector3d<T>& lhs, const U& rhs) {
+    lhs.x *= rhs;
+    lhs.y *= rhs;
+    lhs.z *= rhs;
+    return lhs;
+}
+template <typename T, typename U>
+vector3d<T>& operator /=(vector3d<T>& lhs, const U& rhs) {
+    lhs.x /= rhs;
+    lhs.y /= rhs;
+    lhs.z /= rhs;
+    return lhs;
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() + std::declval<U>())> operator +(
+        const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return make_vector3d(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() + std::declval<U>())> operator -(
+        const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs + (-rhs);
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() * std::declval<U>())> operator *(
+        const vector3d<T>& lhs, const U& rhs) {
+    return make_vector3d(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs);
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() * std::declval<U>())> operator *(
+        const T& lhs, const vector3d<U>& rhs) {
+    return make_vector3d(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z);
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() / std::declval<U>())> operator /(
+        const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return make_vector3d(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z);
+}
+template <typename T, typename U>
+vector3d<decltype(std::declval<T>() / std::declval<U>())> operator /(
+        const vector3d<T>& lhs, const U& rhs) {
+    return lhs / make_vector3d(rhs, rhs, rhs);
+}
+
 
 template<typename T>
 vector3d<T> interpolate(vector3d<T> a,vector3d<T> b)
@@ -86,4 +141,4 @@ struct vector_comparer
 
 }
 
-#endif // VECTOR_H
+#endif // TRILLEK_ELDALAR_VECTOR_H

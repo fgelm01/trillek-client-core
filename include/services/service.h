@@ -13,7 +13,7 @@ class service
     public:
         service(client* _client){this->_client=_client;};
         virtual ~service(){};
-        virtual void receive_event(std::shared_ptr<event> e){}
+        virtual void receive_event(event_shared_ptr) = 0;
         virtual void init(){}
         client* get_client(){return _client;}
     protected:

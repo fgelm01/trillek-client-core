@@ -29,11 +29,11 @@ voxel_data* basic_voxel_asset_loader::load(std::string file)
                                         object_header.voxel_resolution[0],
                                         object_header.voxel_resolution[2],
                                         object_header.voxel_resolution[1]);
-    unsigned int real_size= object_header.voxel_resolution[0]*
+    std::size_t real_size= object_header.voxel_resolution[0]*
                             object_header.voxel_resolution[1]*
                             object_header.voxel_resolution[2];
                             std::cerr << real_size << " reserved" << std::endl;
-    for( int i2=0; i2<real_size;i2++)
+    for(std::size_t i2=0; i2<real_size;i2++)
     {
         char voxel_header;
         ifile.read((char*)(&voxel_header),sizeof(char ));

@@ -22,7 +22,7 @@ marching_cubes_render_algorithm::~marching_cubes_render_algorithm()
 void marching_cubes_render_algorithm::step( vector3d<float> pos,
                                             unsigned char cubeindex,
                                             float size,
-                                            graphics_service* service,
+                                            graphics_service* /*service*/,
                                             std::shared_ptr<mesh_data> model)
 {
         vector3d<float> p0=pos + vector3d<float>(-size/2,-size/2,-size/2);

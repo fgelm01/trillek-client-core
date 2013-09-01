@@ -120,14 +120,14 @@ void opengl_graphics_service::rendering(render_tree_node* node)
             auto trans=(transformation_node*)(node);
             this->do_translation(trans->get_transformation());
         }
-        for(int i=0; i<node->get_num_childs();++i)
+        for(std::size_t i=0; i<node->get_num_childs();++i)
         {
             this->rendering(node->get_child(i));
         }
     }
 }
 
-void opengl_graphics_service::render_light(light_settings options)
+void opengl_graphics_service::render_light(light_settings /*options*/)
 {
     GLfloat pos[] = {0, 0, 0, 1};
     glLightfv(GL_LIGHT0, GL_POSITION, pos);
