@@ -12,7 +12,7 @@ class voxel_array : public voxel_data
     public:
         voxel_array(std::size_t w, std::size_t h, std::size_t d);
         virtual ~voxel_array();
-        vector3d<std::size_t> get_size(){return size;}
+        vector3d<std::size_t> get_size() const {return size;}
         voxel get_voxel(std::size_t x, std::size_t y, std::size_t z) const;
         void set_voxel( std::size_t x, std::size_t y, std::size_t z, voxel v);
         void reserve_space( std::size_t w, std::size_t h, std::size_t d);

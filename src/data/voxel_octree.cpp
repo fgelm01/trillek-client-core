@@ -13,20 +13,20 @@ voxel_octree::~voxel_octree()
     //dtor
 }
 
-vector3d<unsigned int> voxel_octree::get_size()
+vector3d<std::size_t> voxel_octree::get_size() const
 {
-    return vector3d<unsigned int>(size,size,size);
+    return vector3d<std::size_t>(size,size,size);
 }
-voxel voxel_octree::get_voxel(  unsigned int x,
-                                unsigned int y,
-                                unsigned int z)
+voxel voxel_octree::get_voxel(  std::size_t x,
+                                std::size_t y,
+                                std::size_t z) const
 {
-
+    return voxel();
 }
 
-void voxel_octree::set_voxel(   unsigned int x,
-                                unsigned int y,
-                                unsigned int z,
+void voxel_octree::set_voxel(   std::size_t x,
+                                std::size_t y,
+                                std::size_t z,
                                 voxel v)
 {
 }

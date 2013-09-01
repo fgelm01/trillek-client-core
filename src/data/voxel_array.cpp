@@ -45,6 +45,7 @@ void voxel_array::reserve_space(std::size_t w,
 
 voxel_octree voxel_array::to_octree()
 {
+    return voxel_octree();
 }
 
 }

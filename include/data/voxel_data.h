@@ -14,7 +14,7 @@ class voxel_data
     public:
         voxel_data(){};
         virtual ~voxel_data(){};
-        virtual vector3d<std::size_t> get_size()=0;
+        virtual vector3d<std::size_t> get_size() const = 0;
         virtual voxel get_voxel(std::size_t x,
                                  std::size_t y,
                                  std::size_t z) const = 0;

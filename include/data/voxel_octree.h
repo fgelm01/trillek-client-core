@@ -11,19 +11,19 @@ class voxel_octree : public voxel_data
     public:
         voxel_octree();
         virtual ~voxel_octree();
-        vector3d<unsigned int> get_size();
-        voxel get_voxel(unsigned int x,
-                                 unsigned int y,
-                                 unsigned int z);
-        void set_voxel(unsigned int x,
-                               unsigned int y,
-                               unsigned int z,
-                               voxel v);
+        vector3d<std::size_t> get_size() const;
+        voxel get_voxel(std::size_t x,
+                        std::size_t y,
+                        std::size_t z) const;
+        void set_voxel(std::size_t x,
+                       std::size_t y,
+                       std::size_t z,
+                       voxel v);
         data_type get_type(){return dt_voxel_octree;}
-        void reserve_space(unsigned int,unsigned int,unsigned int);
+        void reserve_space(std::size_t,std::size_t,std::size_t);
     protected:
     private:
-        unsigned int size;
+        std::size_t size;
 };
 
 }
