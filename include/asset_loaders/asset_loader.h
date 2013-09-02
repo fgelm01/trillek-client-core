@@ -3,8 +3,7 @@
 #include <string>
 #include "data/data.h"
 
-namespace trillek
-{
+namespace trillek{
 
 class asset_loader
 {

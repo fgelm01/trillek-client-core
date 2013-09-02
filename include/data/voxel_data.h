@@ -1,5 +1,5 @@
-#ifndef VOXEL_DATA_H
-#define VOXEL_DATA_H
+#ifndef TRILLEK_VOXEL_DATA_H
+#define TRILLEK_VOXEL_DATA_H
 
 #include "data/render_data.h"
 #include "data/voxel.h"
@@ -50,4 +50,4 @@ private:
 
 }
 
-#endif // VOXEL_DATA_H
+#endif // TRILLEK_VOXEL_DATA_H

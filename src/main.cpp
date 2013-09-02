@@ -25,6 +25,9 @@ int main(int argc, char **argv)
         a_s->register_asset_loader("voxels", 
                 new trillek::basic_voxel_asset_loader());
         a_s->register_asset_loader("obj", mesh_loader);
+        a_s->register_asset_loader("OBJ", mesh_loader);
+        a_s->register_asset_loader("stl", mesh_loader);
+        a_s->register_asset_loader("STL", mesh_loader);
         a_s->register_asset_loader("3DS", mesh_loader);
         mesh_loader.reset();
 
