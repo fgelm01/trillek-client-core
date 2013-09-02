@@ -19,6 +19,10 @@ public:
     voxel_data(){}
     virtual ~voxel_data(){}
     virtual size_vector3d get_size() const = 0;
+    virtual std::size_t get_volume() const {
+        size_vector3d my_size = get_size();
+        return my_size.x * my_size.y * my_size.z;
+    }
     virtual const voxel& get_voxel(std::size_t x,
                                    std::size_t y,
                                    std::size_t z) const = 0;
