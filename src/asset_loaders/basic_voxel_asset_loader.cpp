@@ -49,6 +49,7 @@ voxel_data* basic_voxel_asset_loader::load(const std::string& file) const
     std::cerr << "Conversion to Octree end" << std::endl;
     std::cerr << "Octree has " << octree->get_num_nodes() 
             << " nodes" << std::endl;
+    std::cerr << "Filled volume " << octree->get_opaque_volume() << std::endl;
     return octree;
 }
 

@@ -45,6 +45,21 @@ std::size_t voxel_octree::get_num_nodes() const {
     }
     return ret;
 }
+std::size_t voxel_octree::get_opaque_volume() const {
+    std::size_t ret = 0;
+    if(_has_children) {
+        for(const voxel_octree_ptr& child : _children) {
+            const voxel_octree* child_ptr = child.get();
+            ret += child_ptr->get_opaque_volume();
+        }
+    } else {
+        const size_vector3d my_size = get_size();
+        if(_data.is_opaque()) {
+            ret += my_size.x * my_size.y * my_size.z;
+        }
+    }
+    return ret;
+}
 const voxel& voxel_octree::get_voxel(std::size_t x,
                                      std::size_t y,
                                      std::size_t z) const

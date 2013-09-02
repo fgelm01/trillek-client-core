@@ -28,7 +28,15 @@ public:
                    const voxel& v) override;
     size_vector3d get_size() const override;
     data_type get_type() const override {return dt_voxel_octree;}
+    /**
+     * @brief Get the number of elements in the whole tree
+     */
     std::size_t get_num_nodes() const;
+    /**
+     * @brief Gets the volume of opaque voxels. 
+     * As though all data was represented by 1x1x1 voxels
+     */
+    std::size_t get_opaque_volume() const;
     /**
      * @brief Become at least as large as x,y,z
      * Final size is smallest power-of-two cube larger than 
