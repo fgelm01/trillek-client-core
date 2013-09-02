@@ -16,7 +16,7 @@ template <typename T>
 class vector3d;
 
 template <typename T>
-vector3d<T> make_vector3d(T&& x, T&& y, T&& z);
+vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z);
 
 template<typename T>
 struct vector2d
@@ -31,8 +31,10 @@ struct vector3d
     typedef T value_type;
     value_type x,y,z;
     vector3d() : x(0), y(0), z(0) {}
-    vector3d(T x,T y,T z) : x(x), y(y), z(z) {}
-    vector3d(const vector3d<T>& other) : x(other.x), y(other.y), z(other.z) {}
+    template <typename U>
+    vector3d(U x,U y,U z) : x(x), y(y), z(z) {}
+    template <typename U>
+    vector3d(const vector3d<U>& other) : x(other.x), y(other.y), z(other.z) {}
     template <typename U>
     vector3d<decltype(std::declval<T>() * std::declval<U>())> cross(
                 const vector3d<U>& other) {
@@ -52,11 +54,11 @@ struct vector3d
 };
 
 template <typename T>
-vector3d<T> make_vector3d(T&& x, T&& y, T&& z)
+vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z)
 {
-    return vector3d<T>(std::forward<T>(x),
-                       std::forward<T>(y),
-                       std::forward<T>(z));
+    return vector3d<typename std::decay<T>::type>(std::forward<T>(x),
+                                                  std::forward<T>(y),
+                                                  std::forward<T>(z));
 }
 
 template <typename T>

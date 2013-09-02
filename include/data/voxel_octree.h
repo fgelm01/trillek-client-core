@@ -28,7 +28,21 @@ public:
                    const voxel& v) override;
     size_vector3d get_size() const override;
     data_type get_type() const override {return dt_voxel_octree;}
-    void reserve_space(std::size_t,std::size_t,std::size_t);
+    std::size_t get_num_nodes() const;
+    /**
+     * @brief Become at least as large as x,y,z
+     * Final size is smallest power-of-two cube larger than 
+     * the maximum of x,y,z.
+     * It is not valid to do this operation on an octree with children
+     * Doing it on a child of another octree produces undefined behaviour
+     * @param x
+     * @param y
+     * @param z
+     */
+    void reserve_space(std::size_t x, 
+                       std::size_t y, 
+                       std::size_t z);
+    void reserve_space(const size_vector3d& xyz);
     static voxel_octree* convert(voxel_data* data);
 protected:
 private:

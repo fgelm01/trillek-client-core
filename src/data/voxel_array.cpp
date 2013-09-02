@@ -81,7 +81,6 @@ void voxel_array_alternate::reserve_space(std::size_t x,
                                        (std::size_t)y,
                                        (std::size_t)z);
 }
-
 std::size_t voxel_array_alternate::compute_index(std::size_t x,
                                                  std::size_t y,
                                                  std::size_t z) const {

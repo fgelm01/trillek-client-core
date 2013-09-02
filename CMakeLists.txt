@@ -41,9 +41,27 @@ if(src_list)
 	set_target_properties(trillek-client-core PROPERTIES LINKER_LANGUAGE CXX)
     add_definitions("-std=c++11 -Wall -Wextra")
 	if(WIN32)
-		target_link_libraries(trillek-client-core "sfml-graphics" "sfml-audio" "sfml-network" "sfml-window" "sfml-system" "opengl32" "GLEW32" "stdc++")
+		target_link_libraries(trillek-client-core 
+            "sfml-graphics" 
+            "sfml-audio" 
+            "sfml-network" 
+            "sfml-window" 
+            "sfml-system" 
+            "opengl32" 
+            "GLEW32" 
+            "stdc++")   #add windows assimp here
 	else(WIN32)
-		target_link_libraries(trillek-client-core "sfml-graphics" "sfml-audio" "sfml-network" "sfml-window" "sfml-system" "GL" "GLEW32" "stdc++" "jpeg")
+		target_link_libraries(trillek-client-core 
+            "sfml-graphics" 
+            "sfml-audio" 
+            "sfml-network" 
+            "sfml-window" 
+            "sfml-system" 
+            "GL" 
+            "GLEW" 
+            "stdc++" 
+            "jpeg" 
+            "assimp")
 	endif()
 else(src_list)
 	message(WARNING "No Source or Header files found")

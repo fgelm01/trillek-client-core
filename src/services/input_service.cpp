@@ -37,6 +37,8 @@ void input_service::receive_event(std::shared_ptr<event> e)
             std::cerr << "Key released: " << k_e->code << std::endl;
         if(k_e->code==keyboard::key_code::escape)
             this->_client->get_window_service()->close();
+        else if(k_e->code=='e' && k_e->pressed)
+            toggle_trap_mouse();
     }else if(type==event::mouse_move) {
         auto mm_e=std::dynamic_pointer_cast<mouse_move_event>(e);
         this->mouse_move(mm_e);
@@ -66,6 +68,10 @@ void input_service::mouse_move(std::shared_ptr<mouse_move_event> e)
     }else
     {
     }
+}
+
+void input_service::toggle_trap_mouse() {
+    trap_mouse = !trap_mouse;
 }
 
 void input_service::register_mouse_listener(

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <algorithm>
 #include "math/math_general.h"
+#include <iostream>
 
 namespace trillek
 {
@@ -32,9 +33,17 @@ voxel_octree::~voxel_octree() {}
 
 voxel_octree::size_vector3d voxel_octree::get_size() const {
     const std::size_t actual_size = (1 << _size_exp);
-    return make_vector3d<std::size_t>((std::size_t)actual_size,
-                                      (std::size_t)actual_size,
-                                      (std::size_t)actual_size);
+    return make_vector3d(actual_size, actual_size, actual_size);
+}
+std::size_t voxel_octree::get_num_nodes() const {
+    std::size_t ret = 1;
+    if(_has_children) {
+        for(const voxel_octree_ptr& child : _children) {
+            const voxel_octree* child_ptr = child.get();
+            ret += child_ptr->get_num_nodes();
+        }
+    }
+    return ret;
 }
 const voxel& voxel_octree::get_voxel(std::size_t x,
                                      std::size_t y,
@@ -79,6 +88,19 @@ void voxel_octree::set_voxel(std::size_t x,
     }
 }
 
+void voxel_octree::reserve_space(std::size_t x, std::size_t y, std::size_t z) {
+    assert(!_has_children);
+    const std::size_t max_size = std::max(std::max(x, y), z);
+    std::cerr << "Max size is " << max_size << std::endl;
+    for(_size_exp = 0; static_cast<std::size_t>(1 << _size_exp) <= max_size; 
+            ++_size_exp);
+    std::cerr << "Exponent is " << _size_exp << std::endl;
+}
+
+void voxel_octree::reserve_space(const size_vector3d& xyz) {
+    reserve_space(xyz.x, xyz.y, xyz.z);
+}
+
 std::size_t voxel_octree::compute_child_index(std::size_t x,
                                               std::size_t y,
                                               std::size_t z) const {
@@ -113,6 +135,7 @@ void voxel_octree::combine_children() {
         for(voxel_octree_ptr& child : _children) {
             child.reset(nullptr);
         }
+        _has_children = false;
     } else {
         std::size_t num_standard = 0;
         std::size_t num_opaque = 0;
@@ -125,42 +148,28 @@ void voxel_octree::combine_children() {
     }
 }
 
-voxel_octree* voxel_octree::convert(voxel_data* data)
-{
+voxel_octree* voxel_octree::convert(voxel_data* data) {
     // If it already is an octree, just give it back
     if(data->get_type()==dt_voxel_octree)
         return (voxel_octree*)data;
-
-
-    size_vector3d _size=data->get_size();
-
-    // Octrees can only data that is cube shaped and whose dimensions
-    // are a power of 2
-    std::size_t new_size = std::max(std::max(_size.x,_size.y),_size.z);
-    new_size=math::find_next_pow2(new_size);
-
-    size_vector3d offsets((_size.x-new_size)/2,
-                           (_size.y-new_size)/2,
-                           (_size.z-new_size)/2);
-
-    voxel_octree* retval=new voxel_octree(new_size,voxel());
-
-    for(int z=0;z<_size.z;z++)
-    {
-        for(int y=0;y<_size.y;y++)
-        {
-            for(int x=0;z<_size.x;x++)
-            {
-                voxel vox=data->get_voxel(x,y,z);
-                if(vox.is_opaque() && vox.is_standard())
-                    retval->set_voxel(  x+offsets.x,
-                                        y+offsets.y,
-                                        z+offsets.z,
-                                        vox);
+    
+    voxel_octree* retval = new voxel_octree();
+    std::cerr << "size of retval is " << retval->get_size().x << std::endl;
+    retval->reserve_space(data->get_size());
+    std::cerr << "size of retval is " << retval->get_size().x << std::endl;
+    const size_vector3d _size = data->get_size();
+//    const std::size_t new_size = retval->get_size().x;
+//    size_vector3d offsets((_size.x-new_size)/2,
+//                           (_size.y-new_size)/2,
+//                           (_size.z-new_size)/2);
+    vector3d<int> _size_i = _size;
+    for(int z=0;z<_size_i.z;++z) {
+        for(int y=0;y<_size_i.y;++y) {
+            for(int x=0;x<_size_i.x;++x) {
+                retval->set_voxel(x,y,z,data->get_voxel(x,y,z));
             }
         }
     }
-
     return retval;
 }
 

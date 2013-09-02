@@ -2,6 +2,7 @@
 #define VOXEL_ARRAY_H
 
 #include "data/voxel_data.h"
+#include "data/voxel_octree.h"
 
 namespace trillek
 {
@@ -17,6 +18,9 @@ public:
                                std::size_t z) = 0;
     virtual void reserve_space(size_vector3d xyz) {
         reserve_space(xyz.x, xyz.y, xyz.z);
+    }
+    virtual data_type get_type() const override {
+        return dt_voxel_array;
     }
 protected:
     size_vector3d _size;
