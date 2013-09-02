@@ -1,7 +1,14 @@
 #include "data/voxel_array.h"
 #include <iostream>
+#include <cassert>
 namespace trillek
 {
+
+voxel_array_base::voxel_array_base() {}
+voxel_array_base::~voxel_array_base() {}
+voxel_array_base::size_vector3d voxel_array_base::get_size() const {
+    return _size;
+}
 
 voxel_array::voxel_array(std::size_t w, std::size_t h, std::size_t d)
     : size(w,h,d)
@@ -13,9 +20,9 @@ voxel_array::~voxel_array()
 {
     //dtor
 }
-voxel voxel_array::get_voxel(   std::size_t x,
-                                std::size_t y,
-                                std::size_t z) const
+const voxel& voxel_array::get_voxel(std::size_t x,
+                             std::size_t y,
+                             std::size_t z) const
 {
     return this->data.at(x).at(y).at(z);
 }
@@ -23,7 +30,7 @@ voxel voxel_array::get_voxel(   std::size_t x,
 void voxel_array::set_voxel(std::size_t x,
                             std::size_t y,
                             std::size_t z,
-                            voxel v)
+                            const voxel& v)
 {
     this->data[x][y][z]=v;
 }
@@ -43,9 +50,48 @@ void voxel_array::reserve_space(std::size_t w,
     }
 }
 
-voxel_octree voxel_array::to_octree()
+voxel_octree voxel_array::to_octree() const
 {
     return voxel_octree();
+}
+
+voxel_array_alternate::voxel_array_alternate() {}
+voxel_array_alternate::~voxel_array_alternate() {}
+voxel_array_alternate::voxel_array_alternate(size_vector3d size) {
+    reserve_space(size.x, size.y, size.z);
+}
+voxel_array_alternate::voxel_array_alternate(std::size_t x, 
+                                             std::size_t y, 
+                                             std::size_t z) {
+    reserve_space(x, y, z);
+}
+const voxel& voxel_array_alternate::get_voxel(std::size_t x, 
+                                              std::size_t y, 
+                                              std::size_t z) const {
+    return _data[compute_index(x, y, z)];
+}
+void voxel_array_alternate::set_voxel(std::size_t x, 
+                                      std::size_t y, 
+                                      std::size_t z, 
+                                      const voxel& v) {
+    _data[compute_index(x, y, z)] = v;
+}
+void voxel_array_alternate::reserve_space(std::size_t x, 
+                                          std::size_t y, 
+                                          std::size_t z) {
+    _data.resize(x * y * z);
+    _size = make_vector3d(x, y, z);
+}
+voxel_octree voxel_array_alternate::to_octree() const {
+    return voxel_octree();
+}
+std::size_t voxel_array_alternate::compute_index(std::size_t x, 
+                                                 std::size_t y, 
+                                                 std::size_t z) const {
+    assert(x < _size.x);
+    assert(y < _size.y);
+    assert(z < _size.z);
+    return z * _size.x * _size.y + y * _size.x + x;
 }
 
 }

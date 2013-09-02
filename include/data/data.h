@@ -17,7 +17,7 @@ class data
 
         data(){};
         virtual ~data(){};
-        virtual data_type get_type(){return dt_nothing;}
+        virtual data_type get_type() const {return dt_nothing;}
     protected:
     private:
 };

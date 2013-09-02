@@ -11,6 +11,13 @@
 
 namespace trillek
 {
+
+template <typename T>
+class vector3d;
+
+template <typename T>
+vector3d<T> make_vector3d(T&& x, T&& y, T&& z);
+
 template<typename T>
 struct vector2d
 {
@@ -28,18 +35,17 @@ struct vector3d
     vector3d(U x,U y,U z) : x(x), y(y), z(z) {}
     template <typename U>
     vector3d(const vector3d<U>& other) : x(other.x), y(other.y), z(other.z) {}
-    vector3d<T> cross(vector3d<float> other)
-    {
-        return vector3d<T>( (this->y*other.z)-(this->z*other.y),
-                            (this->z*other.x)-(this->x*other.z),
-                            (this->x*other.y)-(this->y*other.x));
+    template <typename U>
+    vector3d<decltype(std::declval<T>() * std::declval<U>())> cross(
+                const vector3d<U>& other) {
+        return make_vector3d(y * other.z - z * other.y, 
+                             z * other.x - x * other.z, 
+                             x * other.y - y * other.x);
     }
-    float length()
-    {
-        return sqrt(x * x + y * y + z * z);
+    float length() {
+        return std::sqrt(x * x + y * y + z * z);
     }
-    vector3d<T> normalize()
-    {
+    vector3d<T> normalize() {
         float length=this->length();
         return vector3d<T>( this->x/length,
                             this->y/length,

@@ -12,14 +12,14 @@ class voxel_octree : public voxel_data
         voxel_octree();
         virtual ~voxel_octree();
         vector3d<std::size_t> get_size() const;
-        voxel get_voxel(std::size_t x,
+        const voxel& get_voxel(std::size_t x,
                         std::size_t y,
-                        std::size_t z) const;
+                        std::size_t z) const override;
         void set_voxel(std::size_t x,
                        std::size_t y,
                        std::size_t z,
-                       voxel v);
-        data_type get_type(){return dt_voxel_octree;}
+                       const voxel& v) override;
+        data_type get_type() const override {return dt_voxel_octree;}
         void reserve_space(std::size_t,std::size_t,std::size_t);
     protected:
     private:
