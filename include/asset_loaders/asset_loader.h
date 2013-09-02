@@ -11,7 +11,7 @@ class asset_loader
     public:
         asset_loader(){};
         virtual ~asset_loader(){};
-        virtual data* load(std::string file)=0;
+        virtual data* load(const std::string& file) const = 0;
     protected:
     private:
 };

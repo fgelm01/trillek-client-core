@@ -76,6 +76,13 @@ void voxel_octree::set_voxel(std::size_t x,
     }
 }
 
+void voxel_octree::reserve_space(std::size_t x, std::size_t y, std::size_t z) {
+    assert(!_has_children);
+    const std::size_t max_size = std::max(std::max(x, y), z);
+    for(_size_exp = 0; static_cast<std::size_t>(1 << _size_exp) < max_size; 
+            ++_size_exp);
+}
+
 std::size_t voxel_octree::compute_child_index(std::size_t x, 
                                               std::size_t y, 
                                               std::size_t z) const {

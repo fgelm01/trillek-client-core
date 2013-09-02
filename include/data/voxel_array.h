@@ -19,7 +19,7 @@ public:
     virtual void reserve_space(size_vector3d xyz) {
         reserve_space(xyz.x, xyz.y, xyz.z);
     }
-    virtual voxel_octree to_octree() const = 0;
+    virtual voxel_octree to_octree() const;
     explicit operator voxel_octree () const {return to_octree();}
 protected:
     size_vector3d _size;
@@ -40,7 +40,6 @@ class voxel_array : public voxel_array_base
         void reserve_space(std::size_t w, 
                            std::size_t h, 
                            std::size_t d) override;
-        voxel_octree to_octree() const override;
     protected:
         vector3d<std::size_t> size;
         std::vector<std::vector<std::vector<voxel>>> data;
@@ -62,7 +61,6 @@ public:
                    std::size_t z, 
                    const voxel& v) override;
     void reserve_space(std::size_t x, std::size_t y, std::size_t z) override;
-    voxel_octree to_octree() const override;
 protected:
     std::size_t compute_index(std::size_t x, 
                               std::size_t y, 
