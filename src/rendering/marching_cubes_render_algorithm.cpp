@@ -59,16 +59,16 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
                                               graphics_service* service)
 {
     voxel_data* data=node->get_render_data();
-    vector3d<std::size_t> size=data->get_size();
+    voxel_data::size_vector3d size=data->get_size();
     std::shared_ptr<mesh_data> model = std::make_shared<mesh_data>();
     model->resize_buffers(size.x*size.y*size.z);
+    vector3d<int> size_i = size;
     for(int x=-1;x<static_cast<int>(size.x);++x)
     {
         for(int y=-1;y<static_cast<int>(size.y);++y)
         {
             for(int z=-1;z<static_cast<int>(size.z);++z)
             {
-                vector3d<int> size_i = size;
                 unsigned char cubeNum=0;
                 voxel n0,n1,n2,n3,n4,n5,n6,n7;
                 if(x>=0&&

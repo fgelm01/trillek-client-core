@@ -9,18 +9,6 @@ voxel_array_base::~voxel_array_base() {}
 voxel_array_base::size_vector3d voxel_array_base::get_size() const {
     return _size;
 }
-voxel_octree voxel_array_base::to_octree() const {
-    voxel_octree ret;
-    ret.reserve_space(get_size().x, get_size().y, get_size().z);
-    for(std::size_t z = 0; z != get_size().z; ++z) {
-        for(std::size_t y = 0; y != get_size().y; ++y) {
-            for(std::size_t x = 0; x != get_size().x; ++x) {
-                ret.set_voxel(x, y, z, get_voxel(x, y, z));
-            }
-        }
-    }
-    return ret;
-}
 
 voxel_array::voxel_array(std::size_t w, std::size_t h, std::size_t d)
 {

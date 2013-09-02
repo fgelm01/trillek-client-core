@@ -86,6 +86,10 @@ void voxel_octree::reserve_space(std::size_t x, std::size_t y, std::size_t z) {
             ++_size_exp);
 }
 
+void voxel_octree::reserve_space(const size_vector3d& xyz) {
+    reserve_space(xyz.x, xyz.y, xyz.z);
+}
+
 std::size_t voxel_octree::compute_child_index(std::size_t x,
                                               std::size_t y,
                                               std::size_t z) const {
@@ -132,43 +136,26 @@ void voxel_octree::combine_children() {
     }
 }
 
-voxel_octree* voxel_octree::convert(voxel_data* data)
-{
+voxel_octree* voxel_octree::convert(voxel_data* data) {
     // If it already is an octree, just give it back
     if(data->get_type()==dt_voxel_octree)
         return (voxel_octree*)data;
-
-
-    size_vector3d _size=data->get_size();
-
-    // Octrees can only data that is cube shaped and whose dimensions
-    // are a power of 2
-    std::size_t new_size = std::max(std::max(_size.x,_size.y),_size.z);
-    new_size=math::find_next_pow2(new_size);
-
+    
+    voxel_octree* retval = new voxel_octree();
+    retval->reserve_space(data->get_size());
+    const size_vector3d _size = data->get_size();
+    const std::size_t new_size = retval->get_size().x;
     size_vector3d offsets((_size.x-new_size)/2,
                            (_size.y-new_size)/2,
                            (_size.z-new_size)/2);
-
-    voxel_octree* retval=new voxel_octree(new_size,voxel());
     vector3d<int> _size_i = _size;
-    for(int z=0;z<_size_i.z;++z)
-    {
-        for(int y=0;y<_size_i.y;++y)
-        {
-            for(int x=0;z<_size_i.x;++x)
-            {
-                voxel vox=data->get_voxel(x,y,z);
-                if(vox.is_opaque() && vox.is_standard()) {
-                    retval->set_voxel(x+offsets.x,
-                                      y+offsets.y,
-                                      z+offsets.z,
-                                      vox);
-                }
+    for(int z=0;z<_size_i.z;++z) {
+        for(int y=0;y<_size_i.y;++y) {
+            for(int x=0;z<_size_i.x;++x) {
+                retval->set_voxel(x,y,z,data->get_voxel(x,y,z));
             }
         }
     }
-
     return retval;
 }
 

@@ -19,8 +19,6 @@ public:
     virtual void reserve_space(size_vector3d xyz) {
         reserve_space(xyz.x, xyz.y, xyz.z);
     }
-    virtual voxel_octree to_octree() const;
-    explicit operator voxel_octree () const {return to_octree();}
 protected:
     size_vector3d _size;
 };

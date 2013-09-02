@@ -41,6 +41,7 @@ public:
     void reserve_space(std::size_t x, 
                        std::size_t y, 
                        std::size_t z);
+    void reserve_space(const size_vector3d& xyz);
     static voxel_octree* convert(voxel_data* data);
 protected:
 private:
