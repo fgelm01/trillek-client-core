@@ -9,7 +9,7 @@ namespace trillek
 
 class voxel_array_base : public voxel_data {
 public:
-    typedef vector3d<std::size_t> size_vector3d;
+    using voxel_data::size_vector3d;
     voxel_array_base();
     virtual ~voxel_array_base();
     size_vector3d get_size() const override;
@@ -49,6 +49,7 @@ class voxel_array : public voxel_array_base
 
 class voxel_array_alternate : public voxel_array_base {
 public:
+    using voxel_array_base::size_vector3d;
     voxel_array_alternate();
     virtual ~voxel_array_alternate();
     voxel_array_alternate(size_vector3d size);
