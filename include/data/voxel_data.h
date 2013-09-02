@@ -29,9 +29,9 @@ public:
                            std::size_t y,
                            std::size_t z,
                            const voxel& v) = 0;
-    virtual void set_voxel(std::size_t x, 
-                           std::size_t y, 
-                           std::size_t z, 
+    virtual void set_voxel(std::size_t x,
+                           std::size_t y,
+                           std::size_t z,
                            voxel&& v) { set_voxel(x, y, z, v); }
     virtual void set_voxel(const size_vector3d& xyz, const voxel& v) {
         set_voxel(xyz.x, xyz.y, xyz.z, v);

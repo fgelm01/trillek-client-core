@@ -20,6 +20,9 @@ SET(src_list ${src_list} ${tmp_raw_src_list})
 FILE(GLOB_RECURSE tmp_raw_src_list include/*.hpp)
 SET(src_list ${src_list} ${tmp_raw_src_list})
 
+#In case you want to profile, comment out otherwise
+SET(CMAKE_CXX_FLAGS "-pg")  
+
 if(src_list)
 	add_executable(trillek-client-core ${src_list})
 	

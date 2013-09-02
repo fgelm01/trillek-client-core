@@ -17,6 +17,7 @@ public:
     voxel_octree();
     voxel_octree(const voxel_octree& other);
     voxel_octree(voxel_octree&& other);
+    voxel_octree(voxel_data* other);
     virtual ~voxel_octree();
     const voxel& get_voxel(std::size_t x,
                     std::size_t y,
@@ -28,17 +29,18 @@ public:
     size_vector3d get_size() const override;
     data_type get_type() const override {return dt_voxel_octree;}
     void reserve_space(std::size_t,std::size_t,std::size_t);
+    static voxel_octree* convert(voxel_data* data);
 protected:
 private:
     ///@brief construct an octree with this size having data
     explicit voxel_octree(std::size_t size_exp, const voxel& data);
     typedef std::unique_ptr<voxel_octree> voxel_octree_ptr;
     typedef std::array<voxel_octree_ptr, 8> voxel_child_array;
-    std::size_t compute_child_index(std::size_t x, 
-                                    std::size_t y, 
-                                    std::size_t z) const; 
-    size_vector3d compute_child_relative_coordinates(std::size_t x, 
-                                                     std::size_t y, 
+    std::size_t compute_child_index(std::size_t x,
+                                    std::size_t y,
+                                    std::size_t z) const;
+    size_vector3d compute_child_relative_coordinates(std::size_t x,
+                                                     std::size_t y,
                                                      std::size_t z) const;
     /**
      * @brief If I have no children, make children exactly like me.
