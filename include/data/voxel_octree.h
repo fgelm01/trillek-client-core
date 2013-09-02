@@ -28,6 +28,7 @@ public:
                    const voxel& v) override;
     size_vector3d get_size() const override;
     data_type get_type() const override {return dt_voxel_octree;}
+    std::size_t get_num_nodes() const;
     /**
      * @brief Become at least as large as x,y,z
      * Final size is smallest power-of-two cube larger than 

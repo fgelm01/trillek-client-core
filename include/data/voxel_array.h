@@ -19,6 +19,9 @@ public:
     virtual void reserve_space(size_vector3d xyz) {
         reserve_space(xyz.x, xyz.y, xyz.z);
     }
+    virtual data_type get_type() const override {
+        return dt_voxel_array;
+    }
 protected:
     size_vector3d _size;
 };
