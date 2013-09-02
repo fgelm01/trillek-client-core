@@ -10,13 +10,13 @@ namespace trillek
 class voxel_model : public render_tree_node
 {
     public:
-        voxel_model(int x, int y, int z);
+        voxel_model(std::size_t x, std::size_t y, std::size_t z);
         virtual ~voxel_model();
         virtual node_type get_render_type(){return voxel_node;};
         voxel_data* get_render_data(){return (voxel_data*)data.get();};
         void set_render_data(voxel_data* _data)
         {this->data=std::shared_ptr<voxel_data>(_data);}
-        void set_voxel(int x, int y, int z, voxel v);
+        void set_voxel(std::size_t x, std::size_t y, std::size_t z, voxel v);
         bool needs_redraw(){return false;/*TODO:Implement logic*/}
     protected:
     private:

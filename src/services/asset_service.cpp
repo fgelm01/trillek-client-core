@@ -17,17 +17,22 @@ asset_service::~asset_service()
 data* asset_service::load(std::string file)
 {
     std::string extension=file.substr(file.find_first_of('.')+1);
-    if(asset_loaders.find(extension)==asset_loaders.end())
+    if(_asset_loaders.find(extension)==_asset_loaders.end())
         std::cerr << "Error: Could not load: " << file << std::endl;
     else
-        return asset_loaders[extension]->load(file);
-    return NULL;
+        return _asset_loaders[extension]->load(file);
+    return nullptr;
 }
 
-void asset_service::register_asset_loader(std::string extension,
-                                          asset_loader* new_asset_loader)
-{
-    this->asset_loaders[extension] = std::unique_ptr<asset_loader>(new_asset_loader);
+void asset_service::register_asset_loader(const std::string& extension,
+                                          asset_loader* new_asset_loader) {
+    _asset_loaders[extension] = 
+            std::unique_ptr<asset_loader>(new_asset_loader);
+}
+
+void asset_service::register_asset_loader(const std::string& extension, 
+        std::shared_ptr<asset_loader> new_asset_loader) {
+    _asset_loaders[extension] = new_asset_loader;
 }
 
 }

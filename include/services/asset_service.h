@@ -15,12 +15,14 @@ class asset_service : public service
         virtual ~asset_service();
 
         data* load(std::string file);
-        void register_asset_loader(std::string extension,
+        void register_asset_loader(const std::string& extension,
                                    asset_loader* new_asset_loader);
+        void register_asset_loader(const std::string& extension, 
+                std::shared_ptr<asset_loader> new_asset_loader);
         void receive_event(event_shared_ptr) override {}
     protected:
     private:
-        std::map<std::string,std::shared_ptr<asset_loader>> asset_loaders;
+        std::map<std::string,std::shared_ptr<asset_loader> > _asset_loaders;
 };
 
 }
