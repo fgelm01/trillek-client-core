@@ -69,14 +69,39 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
             for(int z=-1;z<(int)size.z;++z)
             {
                 unsigned char cubeNum=0;
-                voxel n0=data->get_voxel(x+0,y+0,z+0);
-                voxel n1=data->get_voxel(x+1,y+0,z+0);
-                voxel n2=data->get_voxel(x+0,y+0,z+1);
-                voxel n3=data->get_voxel(x+1,y+0,z+1);
-                voxel n4=data->get_voxel(x+0,y+1,z+0);
-                voxel n5=data->get_voxel(x+1,y+1,z+0);
-                voxel n6=data->get_voxel(x+0,y+1,z+1);
-                voxel n7=data->get_voxel(x+1,y+1,z+1);
+                voxel n0,n1,n2,n3,n4,n5,n6,n7;
+                if(x>=0&&
+                   y>=0&&
+                   z>=0)
+                    n0=data->get_voxel(x+0,y+0,z+0);
+                if(x<(int)size.x-1&&
+                   y>=0&&
+                   z>=0)
+                    n1=data->get_voxel(x+1,y+0,z+0);
+                if(x>=0&&
+                   y>=0&&
+                   z<(int)size.z-1)
+                    n2=data->get_voxel(x+0,y+0,z+1);
+                if(x<(int)size.x-1&&
+                   y>=0&&
+                   z<(int)size.z-1)
+                    n3=data->get_voxel(x+1,y+0,z+1);
+                if(x>=0&&
+                   y<(int)size.y-1&&
+                   z>=0)
+                    n4=data->get_voxel(x+0,y+1,z+0);
+                if(x<(int)size.x-1&&
+                   y<(int)size.y-1&&
+                   z>=0)
+                    n5=data->get_voxel(x+1,y+1,z+0);
+                if(x>=0&&
+                   y<(int)size.y-1&&
+                   z<(int)size.z-1)
+                    n6=data->get_voxel(x+0,y+1,z+1);
+                if(x<(int)size.x-1&&
+                   y<(int)size.y-1&&
+                   z<(int)size.z-1)
+                    n7=data->get_voxel(x+1,y+1,z+1);
 
                 if(n0.is_standard() && n0.is_opaque()) cubeNum |= 1 << 0;
                 if(n1.is_standard() && n1.is_opaque()) cubeNum |= 1 << 1;
