@@ -31,15 +31,13 @@ struct vector3d
     typedef T value_type;
     value_type x,y,z;
     vector3d() : x(0), y(0), z(0) {}
-    template <typename U>
-    vector3d(U x,U y,U z) : x(x), y(y), z(z) {}
-    template <typename U>
-    vector3d(const vector3d<U>& other) : x(other.x), y(other.y), z(other.z) {}
+    vector3d(T x,T y,T z) : x(x), y(y), z(z) {}
+    vector3d(const vector3d<T>& other) : x(other.x), y(other.y), z(other.z) {}
     template <typename U>
     vector3d<decltype(std::declval<T>() * std::declval<U>())> cross(
                 const vector3d<U>& other) {
-        return make_vector3d(y * other.z - z * other.y, 
-                             z * other.x - x * other.z, 
+        return make_vector3d(y * other.z - z * other.y,
+                             z * other.x - x * other.z,
                              x * other.y - y * other.x);
     }
     float length() {
@@ -54,9 +52,10 @@ struct vector3d
 };
 
 template <typename T>
-vector3d<T> make_vector3d(T&& x, T&& y, T&& z) {
-    return vector3d<T>(std::forward<T>(x), 
-                       std::forward<T>(y), 
+vector3d<T> make_vector3d(T&& x, T&& y, T&& z)
+{
+    return vector3d<T>(std::forward<T>(x),
+                       std::forward<T>(y),
                        std::forward<T>(z));
 }
 
@@ -129,21 +128,6 @@ vector3d<T> interpolate(vector3d<T> a,vector3d<T> b)
     retval/=2;
     return retval+a;
 }
-
-template<typename T>
-struct vector_comparer
-{
-    bool operator()(const vector3d<T> & Left, const vector3d<T> & Right) const
-    {
-        if(Left.x<Right.x)
-            return true;
-        if(Left.y<Right.y)
-            return true;
-        if(Left.z<Right.z)
-            return true;
-        return false;
-    }
-};
 
 }
 

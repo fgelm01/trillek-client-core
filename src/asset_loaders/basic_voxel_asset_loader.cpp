@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include "data/voxel_array.h"
+#include "data/voxel_octree.h"
 namespace trillek {
 
 basic_voxel_asset_loader::basic_voxel_asset_loader()
@@ -25,14 +26,14 @@ voxel_data* basic_voxel_asset_loader::load(const std::string& file) const
     ifile.read((char*)&(file_header),sizeof(voxelfile_file_header ));
 
     ifile.read((char*)&(object_header),sizeof(voxelfile_object_header));
-    voxel_array* voxels = new voxel_array(
+    voxel_array_alternate* voxels = new voxel_array_alternate(
                                         object_header.voxel_resolution[0],
                                         object_header.voxel_resolution[2],
                                         object_header.voxel_resolution[1]);
     std::size_t real_size= object_header.voxel_resolution[0]*
                             object_header.voxel_resolution[1]*
                             object_header.voxel_resolution[2];
-                            std::cerr << real_size << " reserved" << std::endl;
+                            std::cerr << real_size << " Cubes reserved" << std::endl;
     for(std::size_t i2=0; i2<real_size;i2++)
     {
         char voxel_header;
@@ -43,7 +44,10 @@ voxel_data* basic_voxel_asset_loader::load(const std::string& file) const
         ifile.read((char*)(&vox),sizeof(voxelfile_voxel ));
         voxels->set_voxel(vox.i,vox.k,vox.j,trillek::voxel(true,true));
     }
-    return voxels;
+    std::cerr << "Conversion to Octree start" << std::endl;
+    voxel_octree* octree = voxel_octree::convert(voxels);
+    std::cerr << "Conversion to Octree end" << std::endl;
+    return octree;
 }
 
 }

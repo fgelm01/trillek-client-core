@@ -31,7 +31,7 @@ public:
             if(begin->is_opaque()) ++num_opaque;
         }
         const std::size_t half_total = num_total / 2;
-        return voxel(num_standard > half_total, 
+        return voxel(num_standard > half_total,
                 num_opaque > half_total);
     }
 protected:
