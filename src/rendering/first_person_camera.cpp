@@ -1,6 +1,6 @@
 #include "rendering/first_person_camera.h"
 #include "client.h"
-#include <math.h>
+#include <cmath>
 
 namespace trillek
 {
@@ -34,8 +34,8 @@ void first_person_camera::mouse_listen(float dx, float dy)
 void first_person_camera::render(graphics_service* service)
 {
     input_service* i_s = service->get_client()->get_input_service();
-        float conv=3.14f/180.0f;
-    float speed=0.01f;
+    float conv=M_PI/180.0f;
+    float speed=0.0125f;
     if(i_s->is_key_pressed((keyboard::key_code)'w'))
     {
         pos.x+=sin(rot.y*conv)*cos(rot.x*conv)*speed;
@@ -50,13 +50,13 @@ void first_person_camera::render(graphics_service* service)
     }
     if(i_s->is_key_pressed((keyboard::key_code)'a'))
     {
-        pos.x+=cos(rot.y*conv)*cos(rot.x*conv)*speed;
-        pos.z-=sin(rot.y*conv)*cos(rot.x*conv)*speed;
+        pos.x+=cos(rot.y*conv)*speed;
+        pos.z-=sin(rot.y*conv)*speed;
     }
     if(i_s->is_key_pressed((keyboard::key_code)'d'))
     {
-        pos.x-=cos(rot.y*conv)*cos(rot.x*conv)*speed;
-        pos.z+=sin(rot.y*conv)*cos(rot.x*conv)*speed;
+        pos.x-=cos(rot.y*conv)*speed;
+        pos.z+=sin(rot.y*conv)*speed;
     }
     service->do_rotation_x(-rot.x);
     service->do_rotation_y(-rot.y);

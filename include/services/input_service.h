@@ -24,6 +24,7 @@ class input_service : public service
         std::vector<std::shared_ptr<mouse_listener>> mouse_listeners;
         bool trap_mouse;
         void mouse_move(std::shared_ptr<mouse_move_event> e);
+        void toggle_trap_mouse();
 };
 
 }
