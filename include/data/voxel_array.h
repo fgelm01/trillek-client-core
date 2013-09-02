@@ -2,6 +2,7 @@
 #define VOXEL_ARRAY_H
 
 #include "data/voxel_data.h"
+#include "data/voxel_octree.h"
 
 namespace trillek
 {

@@ -151,12 +151,12 @@ voxel_octree* voxel_octree::convert(voxel_data* data)
                            (_size.z-new_size)/2);
 
     voxel_octree* retval=new voxel_octree(new_size,voxel());
-
-    for(int z=0;z<_size.z;++z)
+    vector3d<int> _size_i = _size;
+    for(int z=0;z<_size_i.z;++z)
     {
-        for(int y=0;y<_size.y;++y)
+        for(int y=0;y<_size_i.y;++y)
         {
-            for(int x=0;z<_size.x;++x)
+            for(int x=0;z<_size_i.x;++x)
             {
                 voxel vox=data->get_voxel(x,y,z);
                 if(vox.is_opaque() && vox.is_standard()) {

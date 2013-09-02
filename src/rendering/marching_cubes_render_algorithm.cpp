@@ -59,48 +59,49 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
                                               graphics_service* service)
 {
     voxel_data* data=node->get_render_data();
-    vector3d<unsigned int> size=data->get_size();
+    vector3d<std::size_t> size=data->get_size();
     std::shared_ptr<mesh_data> model = std::make_shared<mesh_data>();
     model->resize_buffers(size.x*size.y*size.z);
-    for(int x=-1;x<(int)size.x;++x)
+    for(int x=-1;x<static_cast<int>(size.x);++x)
     {
-        for(int y=-1;y<(int)size.y;++y)
+        for(int y=-1;y<static_cast<int>(size.y);++y)
         {
-            for(int z=-1;z<(int)size.z;++z)
+            for(int z=-1;z<static_cast<int>(size.z);++z)
             {
+                vector3d<int> size_i = size;
                 unsigned char cubeNum=0;
                 voxel n0,n1,n2,n3,n4,n5,n6,n7;
                 if(x>=0&&
                    y>=0&&
                    z>=0)
                     n0=data->get_voxel(x+0,y+0,z+0);
-                if(x<(int)size.x-1&&
+                if(x<size_i.x-1&&
                    y>=0&&
                    z>=0)
                     n1=data->get_voxel(x+1,y+0,z+0);
                 if(x>=0&&
                    y>=0&&
-                   z<(int)size.z-1)
+                   z<size_i.z-1)
                     n2=data->get_voxel(x+0,y+0,z+1);
-                if(x<(int)size.x-1&&
+                if(x<size_i.x-1&&
                    y>=0&&
-                   z<(int)size.z-1)
+                   z<size_i.z-1)
                     n3=data->get_voxel(x+1,y+0,z+1);
                 if(x>=0&&
-                   y<(int)size.y-1&&
+                   y<size_i.y-1&&
                    z>=0)
                     n4=data->get_voxel(x+0,y+1,z+0);
-                if(x<(int)size.x-1&&
-                   y<(int)size.y-1&&
+                if(x<size_i.x-1&&
+                   y<size_i.y-1&&
                    z>=0)
                     n5=data->get_voxel(x+1,y+1,z+0);
                 if(x>=0&&
-                   y<(int)size.y-1&&
-                   z<(int)size.z-1)
+                   y<size_i.y-1&&
+                   z<size_i.z-1)
                     n6=data->get_voxel(x+0,y+1,z+1);
-                if(x<(int)size.x-1&&
-                   y<(int)size.y-1&&
-                   z<(int)size.z-1)
+                if(x<size_i.x-1&&
+                   y<size_i.y-1&&
+                   z<size_i.z-1)
                     n7=data->get_voxel(x+1,y+1,z+1);
 
                 if(n0.is_standard() && n0.is_opaque()) cubeNum |= 1 << 0;
@@ -114,9 +115,9 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
 
                 if(cubeNum==0||cubeNum==0xFF)
                     continue;
-                this->step(vector3d<float>(x+0.5f-(int)size.x/2,
-                                           y+0.5f-(int)size.y/2,
-                                           z+0.5f-(int)size.z/2),
+                this->step(vector3d<float>(x+0.5f-size_i.x/2,
+                                           y+0.5f-size_i.y/2,
+                                           z+0.5f-size_i.z/2),
                            cubeNum,1.0f,service,model);
             }
         }
