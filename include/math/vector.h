@@ -16,7 +16,7 @@ template <typename T>
 class vector3d;
 
 template <typename T>
-vector3d<T> make_vector3d(T&& x, T&& y, T&& z);
+vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z);
 
 template<typename T>
 struct vector2d
