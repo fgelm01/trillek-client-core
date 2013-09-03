@@ -189,6 +189,34 @@ vector3d<decltype(std::declval<T>() / std::declval<U>())> operator /(
     return lhs / make_vector3d(rhs, rhs, rhs);
 }
 
+template <typename T, typename U>
+bool operator ==(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+template <typename T, typename U>
+bool operator !=(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return !(lhs == rhs);
+}
+template <typename T, typename U>
+bool operator <(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs.x == rhs.x ? lhs.y < rhs.y : lhs.x < rhs.x;
+}
+
+template <typename T, typename U>
+bool operator ==(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+template <typename T, typename U>
+bool operator !=(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return !(lhs == rhs);
+}
+template <typename T, typename U>
+bool operator <(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs.x == rhs.x ? 
+            (lhs.y == rhs.y ? lhs.z < rhs.z : lhs.y < rhs.y) 
+            : lhs.x < rhs.x;
+}
+
 
 template<typename T>
 vector3d<T> interpolate(vector3d<T> a,vector3d<T> b)
