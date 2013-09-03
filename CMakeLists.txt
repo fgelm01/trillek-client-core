@@ -49,7 +49,9 @@ if(src_list)
             "sfml-system" 
             "opengl32" 
             "GLEW32" 
-            "stdc++")   #add windows assimp here
+            "stdc++"
+            "assimp"
+            "zlib")
 	else(WIN32)
 		target_link_libraries(trillek-client-core 
             "sfml-graphics" 
