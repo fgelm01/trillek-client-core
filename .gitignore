@@ -17,4 +17,12 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 *.make
+*.cmake
+
+# The compiled files
+trillek-client-core.*
+trillek-client-core
+
+# Whatever this file is
+gmon.out
 
