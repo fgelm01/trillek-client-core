@@ -1,5 +1,6 @@
-#ifndef RENDER_DATA_H
-#define RENDER_DATA_H
+#ifndef TRILLEK_RENDER_DATA_H
+#define TRILLEK_RENDER_DATA_H
+
 #include "data/data.h"
 
 namespace trillek
@@ -17,4 +18,4 @@ class render_data
 
 }
 
-#endif // RENDER_DATA_H
+#endif // TRILLEK_RENDER_DATA_H

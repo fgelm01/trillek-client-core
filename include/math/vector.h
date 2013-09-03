@@ -8,21 +8,34 @@
 #include <cmath>
 #include <functional>
 #include <type_traits>
+#include <iostream>
 
-namespace trillek
-{
+namespace trillek{
 
 template <typename T>
 class vector3d;
+template <typename T>
+class vector2d;
 
 template <typename T>
 vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z);
+template <typename T>
+vector2d<typename std::decay<T>::type> make_vector2d(T&& x, T&& y);
 
 template<typename T>
-struct vector2d
-{
-    T x,y;
-    vector2d(T x,T y){this->x=x;this->y=y;};
+class vector2d{
+public:
+    typedef T value_type;
+    value_type x,y;
+    template <typename U>
+    vector2d(U&& x, U&& y) : x(std::forward<U>(x)), y(std::forward<U>(y)) {}
+    template <typename U>
+    vector2d(const vector2d<U>& other) : x(other.x), y(other.y) {}
+    template <typename U>
+    decltype(std::declval<value_type>() * std::declval<U>()) cross(
+            const vector2d<U>& other) const {
+        return x * other.y - y * other.x;
+    }
 };
 
 template<typename T>
@@ -37,32 +50,86 @@ struct vector3d
     vector3d(const vector3d<U>& other) : x(other.x), y(other.y), z(other.z) {}
     template <typename U>
     vector3d<decltype(std::declval<T>() * std::declval<U>())> cross(
-                const vector3d<U>& other) {
+                const vector3d<U>& other) const {
         return make_vector3d(y * other.z - z * other.y,
                              z * other.x - x * other.z,
                              x * other.y - y * other.x);
     }
-    float length() {
+    float length() const {
         return std::sqrt(x * x + y * y + z * z);
     }
-    vector3d<T> normalize() {
+    vector3d<T> normalize() const {
         float length=this->length();
         return vector3d<T>( this->x/length,
                             this->y/length,
                             this->z/length);
     }
+    vector2d<T> to_vector2d() const {
+        return make_vector2d(x, y);
+    }
 };
 
 template <typename T>
-vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z)
-{
+vector2d<typename std::decay<T>::type> make_vector2d(T&& x, T&& y) {
+    return vector2d<typename std::decay<T>::type>(std::forward<T>(x),
+                                                  std::forward<T>(y));
+}
+
+template <typename T>
+vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z) {
     return vector3d<typename std::decay<T>::type>(std::forward<T>(x),
                                                   std::forward<T>(y),
                                                   std::forward<T>(z));
 }
 
 template <typename T>
-vector3d<T> operator -(const vector3d<T> rhs) {
+vector2d<T> operator -(const vector2d<T>& rhs) {
+    return make_vector2d(-rhs.x, -rhs.y);
+}
+template <typename T, typename U>
+vector2d<T>& operator +=(vector2d<T>& lhs, const vector2d<U>& rhs) {
+    lhs.x += rhs.x;
+    lhs.y += rhs.y;
+    return lhs;
+}
+template <typename T, typename U>
+vector2d<T>& operator -=(vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs += (-rhs);
+}
+template <typename T, typename U>
+vector2d<T>& operator *=(vector2d<T>& lhs, const U& rhs) {
+    lhs.x *= rhs;
+    lhs.y *= rhs;
+    return lhs;
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() + std::declval<U>())> operator +(
+        const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return make_vector2d(lhs.x + rhs.x, 
+                         lhs.y + rhs.y);
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() + std::declval<U>())> operator -(
+        const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs + (-rhs);
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() * std::declval<U>())> operator *(
+        const vector2d<T>& lhs, const U& rhs) {
+    return make_vector2d(lhs.x * rhs, lhs.y * rhs);
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() * std::declval<U>())> operator *(
+        const T& lhs, const vector2d<U>& rhs) {
+    return make_vector2d(lhs * rhs.x, lhs * rhs.y);
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() / std::declval<U>())> operator /(
+        const vector2d<T>& lhs, const U& rhs) {
+    return make_vector2d(lhs.x / rhs, lhs.y / rhs);
+}
+template <typename T>
+vector3d<T> operator -(const vector3d<T>& rhs) {
     return make_vector3d(-rhs.x, -rhs.y, -rhs.z);
 }
 
@@ -122,6 +189,34 @@ vector3d<decltype(std::declval<T>() / std::declval<U>())> operator /(
     return lhs / make_vector3d(rhs, rhs, rhs);
 }
 
+template <typename T, typename U>
+bool operator ==(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+template <typename T, typename U>
+bool operator !=(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return !(lhs == rhs);
+}
+template <typename T, typename U>
+bool operator <(const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return lhs.x == rhs.x ? lhs.y < rhs.y : lhs.x < rhs.x;
+}
+
+template <typename T, typename U>
+bool operator ==(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+template <typename T, typename U>
+bool operator !=(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return !(lhs == rhs);
+}
+template <typename T, typename U>
+bool operator <(const vector3d<T>& lhs, const vector3d<U>& rhs) {
+    return lhs.x == rhs.x ? 
+            (lhs.y == rhs.y ? lhs.z < rhs.z : lhs.y < rhs.y) 
+            : lhs.x < rhs.x;
+}
+
 
 template<typename T>
 vector3d<T> interpolate(vector3d<T> a,vector3d<T> b)
@@ -129,6 +224,16 @@ vector3d<T> interpolate(vector3d<T> a,vector3d<T> b)
     vector3d<T> retval=b-a;
     retval/=2;
     return retval+a;
+}
+
+template <typename T>
+std::ostream& operator <<(std::ostream& out, const vector2d<T>& rhs) {
+    return out << "[" << rhs.x << ", " << rhs.y << "]";
+}
+
+template <typename T>
+std::ostream& operator <<(std::ostream& out, const vector3d<T>& rhs) {
+    return out << "[" << rhs.x << ", " << rhs.y << ", " << rhs.z << "]";
 }
 
 }
