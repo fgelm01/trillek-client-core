@@ -7,6 +7,7 @@
 #include "services/sfml_window_service.h"
 #include <SFML/OpenGL.hpp>
 #include "services/cust_settings_service.h"
+#include "rendering/dual_marching_cubes_render_algorithm.h"
 #include "rendering/marching_cubes_render_algorithm.h"
 #include "rendering/first_person_camera.h"
 
@@ -16,7 +17,7 @@ namespace trillek
 client::client()
 {
     // TODO: Abstract this out
-    auto algorithm=new marching_cubes_render_algorithm();
+    auto algorithm=new dual_marching_cubes_render_algorithm();
     auto camera=new first_person_camera();
     this->events = trillek::make_unique<event_service>(this);
     this->graphics = trillek::make_unique<opengl_graphics_service>(this,

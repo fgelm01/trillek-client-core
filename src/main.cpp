@@ -20,9 +20,9 @@ int main(int argc, char **argv)
         trillek::render_tree* r_t = g_s->get_render_tree();
         trillek::asset_service* a_s = client.get_asset_service();
         //basic_voxel_asset_loader* bval=new basic_voxel_asset_loader();
-        std::shared_ptr<trillek::voxel_mesh_asset_loader> mesh_loader = 
+        std::shared_ptr<trillek::voxel_mesh_asset_loader> mesh_loader =
                 std::make_shared<trillek::voxel_mesh_asset_loader>();
-        a_s->register_asset_loader("voxels", 
+        a_s->register_asset_loader("voxels",
                 new trillek::basic_voxel_asset_loader());
         a_s->register_asset_loader("obj", mesh_loader);
         a_s->register_asset_loader("OBJ", mesh_loader);
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         a_s->register_asset_loader("3DS", mesh_loader);
         mesh_loader.reset();
 
-        unsigned int size=50;
+        unsigned int size=16;
         auto v_m=std::make_shared<trillek::voxel_model>(size,size,size);
         std::cerr << "Starting Construction" << std::endl;
         std::string filename;
@@ -47,17 +47,17 @@ int main(int argc, char **argv)
             v_m->set_render_data(v_d);
         }else
         {
-            std::cerr << "Couldn't load " << filename << 
+            std::cerr << "Couldn't load " << filename <<
                     ", creating standard room" << std::endl;
             for(std::size_t x=0;x<size;x++) {
                 for(std::size_t z=0;z<size;z++) {
                     for(std::size_t y=0;y<size;y++) {
-                        v_m->set_voxel(x,0,z,trillek::voxel(true,true));
-                        v_m->set_voxel(x,size-1,z,trillek::voxel(true,true));
-                        v_m->set_voxel(0,x,z,trillek::voxel(true,true));
-                        v_m->set_voxel(size-1,x,z,trillek::voxel(true,true));
-                        v_m->set_voxel(x,y,0,trillek::voxel(true,true));
-                        v_m->set_voxel(x,y,size-1,trillek::voxel(true,true));
+                            if(x>0 && x < size-1 &&
+                               y>0 && y < size-1 &&
+                               z>0 && z < size/2)
+                            {
+                                v_m->set_voxel(x,y,z,trillek::voxel(true,true));
+                            }
                     }
                 }
             }

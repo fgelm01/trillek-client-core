@@ -19,20 +19,39 @@ marching_cubes_render_algorithm::~marching_cubes_render_algorithm()
     //dtor
 }
 
-void marching_cubes_render_algorithm::step( vector3d<float> pos,
+unsigned char marching_cubes_render_algorithm::calculate_cube_num(voxel& v0,
+                                                                  voxel& v1,
+                                                                  voxel& v2,
+                                                                  voxel& v3,
+                                                                  voxel& v4,
+                                                                  voxel& v5,
+                                                                  voxel& v6,
+                                                                  voxel& v7)
+{
+    unsigned char cube_num=0;
+    if(v0.is_standard() && v0.is_opaque()) cube_num |= 1 << 0;
+    if(v1.is_standard() && v1.is_opaque()) cube_num |= 1 << 1;
+    if(v2.is_standard() && v2.is_opaque()) cube_num |= 1 << 3;
+    if(v3.is_standard() && v3.is_opaque()) cube_num |= 1 << 2;
+    if(v4.is_standard() && v4.is_opaque()) cube_num |= 1 << 4;
+    if(v5.is_standard() && v5.is_opaque()) cube_num |= 1 << 5;
+    if(v6.is_standard() && v6.is_opaque()) cube_num |= 1 << 7;
+    if(v7.is_standard() && v7.is_opaque()) cube_num |= 1 << 6;
+
+    return cube_num;
+}
+
+void marching_cubes_render_algorithm::step( vector3d<float> p0,
+                                            vector3d<float> p1,
+                                            vector3d<float> p2,
+                                            vector3d<float> p3,
+                                            vector3d<float> p4,
+                                            vector3d<float> p5,
+                                            vector3d<float> p6,
+                                            vector3d<float> p7,
                                             unsigned char cubeindex,
-                                            float size,
-                                            graphics_service* /*service*/,
                                             std::shared_ptr<mesh_data> model)
 {
-        vector3d<float> p0=pos + vector3d<float>(-size/2,-size/2,-size/2);
-        vector3d<float> p1=pos + vector3d<float>( size/2,-size/2,-size/2);
-        vector3d<float> p2=pos + vector3d<float>(-size/2,-size/2, size/2);
-        vector3d<float> p3=pos + vector3d<float>( size/2,-size/2, size/2);
-        vector3d<float> p4=pos + vector3d<float>(-size/2, size/2,-size/2);
-        vector3d<float> p5=pos + vector3d<float>( size/2, size/2,-size/2);
-        vector3d<float> p6=pos + vector3d<float>(-size/2, size/2, size/2);
-        vector3d<float> p7=pos + vector3d<float>( size/2, size/2, size/2);
         std::vector<vector3d<float>> EdgeTable;
         EdgeTable.resize(12);
 		EdgeTable[ 0]=interpolate(p0,p1);
@@ -53,6 +72,35 @@ void marching_cubes_render_algorithm::step( vector3d<float> pos,
                                 EdgeTable[tritable[cubeindex][n+1]],
                                 EdgeTable[tritable[cubeindex][n+0]]);
 		}
+}
+
+void marching_cubes_render_algorithm::step( axis_aligned_box& box,
+                                            unsigned char cubeindex,
+                                            std::shared_ptr<mesh_data> model)
+{
+    step(box.get_corner(0),box.get_corner(1),
+         box.get_corner(2),box.get_corner(3),
+         box.get_corner(4),box.get_corner(5),
+         box.get_corner(6),box.get_corner(7),
+         cubeindex, model);
+}
+
+void marching_cubes_render_algorithm::step( vector3d<float> pos,
+                                            unsigned char cubeindex,
+                                            float size,
+                                            std::shared_ptr<mesh_data> model)
+{
+        vector3d<float> p0=pos + vector3d<float>(-size/2,-size/2,-size/2);
+        vector3d<float> p1=pos + vector3d<float>( size/2,-size/2,-size/2);
+        vector3d<float> p2=pos + vector3d<float>(-size/2,-size/2, size/2);
+        vector3d<float> p3=pos + vector3d<float>( size/2,-size/2, size/2);
+        vector3d<float> p4=pos + vector3d<float>(-size/2, size/2,-size/2);
+        vector3d<float> p5=pos + vector3d<float>( size/2, size/2,-size/2);
+        vector3d<float> p6=pos + vector3d<float>(-size/2, size/2, size/2);
+        vector3d<float> p7=pos + vector3d<float>( size/2, size/2, size/2);
+        step(p0,p1,p2,p3,
+             p4,p5,p6,p7,
+             cubeindex,model);
 }
 
 void marching_cubes_render_algorithm::process(voxel_model* node,
@@ -103,22 +151,14 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
                    y<size_i.y-1&&
                    z<size_i.z-1)
                     n7=data->get_voxel(x+1,y+1,z+1);
-
-                if(n0.is_standard() && n0.is_opaque()) cubeNum |= 1 << 0;
-                if(n1.is_standard() && n1.is_opaque()) cubeNum |= 1 << 1;
-                if(n2.is_standard() && n2.is_opaque()) cubeNum |= 1 << 3;
-                if(n3.is_standard() && n3.is_opaque()) cubeNum |= 1 << 2;
-                if(n4.is_standard() && n4.is_opaque()) cubeNum |= 1 << 4;
-                if(n5.is_standard() && n5.is_opaque()) cubeNum |= 1 << 5;
-                if(n6.is_standard() && n6.is_opaque()) cubeNum |= 1 << 7;
-                if(n7.is_standard() && n7.is_opaque()) cubeNum |= 1 << 6;
+                cubeNum = calculate_cube_num(n0,n1,n2,n3,n4,n5,n6,n7);
 
                 if(cubeNum==0||cubeNum==0xFF)
                     continue;
                 this->step(vector3d<float>(x+0.5f-size_i.x/2,
                                            y+0.5f-size_i.y/2,
                                            z+0.5f-size_i.z/2),
-                           cubeNum,1.0f,service,model);
+                           cubeNum,1.0f,model);
             }
         }
     }
