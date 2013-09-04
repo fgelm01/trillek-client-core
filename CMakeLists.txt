@@ -21,7 +21,7 @@ FILE(GLOB_RECURSE tmp_raw_src_list include/*.hpp)
 SET(src_list ${src_list} ${tmp_raw_src_list})
 
 #In case you want to profile, comment out otherwise
-SET(CMAKE_CXX_FLAGS "-pg")  
+#SET(CMAKE_CXX_FLAGS "-pg")  
 
 if(src_list)
 	add_executable(trillek-client-core ${src_list})
@@ -39,7 +39,7 @@ if(src_list)
 		${GLEW_LIBS}
 	)
 	set_target_properties(trillek-client-core PROPERTIES LINKER_LANGUAGE CXX)
-    add_definitions("-std=c++11 -Wall -Wextra")
+    add_definitions("-std=c++11 -Wall -Wextra -O2")
 	if(WIN32)
 		target_link_libraries(trillek-client-core 
             "sfml-graphics" 

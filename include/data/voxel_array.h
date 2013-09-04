@@ -48,6 +48,7 @@ class voxel_array : public voxel_array_base
 class voxel_array_alternate : public voxel_array_base {
 public:
     using voxel_array_base::size_vector3d;
+    using voxel_array_base::reserve_space;
     voxel_array_alternate();
     virtual ~voxel_array_alternate();
     voxel_array_alternate(size_vector3d size);

@@ -19,6 +19,9 @@ Makefile
 *.make
 *.cmake
 
+# Netbeans
+nbproject
+
 # The compiled files
 trillek-client-core.*
 trillek-client-core
