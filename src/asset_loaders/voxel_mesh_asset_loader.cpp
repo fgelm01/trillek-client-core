@@ -284,7 +284,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     for(const bucket_map::value_type& xyvt : xyb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : xyvt.second) {
-            float crossing;
+            float_vector3d::value_type crossing;
             if(z_ray_intersection(triangle, xyvt.first + xy_center, 
                     crossing)) {
                 crossings.push_back(crossing);
@@ -295,7 +295,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             for(float coord = crossings[i]; coord < crossings[i + 1]; 
                     ++coord) {
                 int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord);
+                        static_cast<int_vector3d::value_type>(coord + 0.5);
                 xyvox.set_voxel(
                         xyvt.first.x - min_xyz.x, 
                         xyvt.first.y - min_xyz.y, 
@@ -309,7 +309,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     for(const bucket_map::value_type& yzvt : yzb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : yzvt.second) {
-            float crossing;
+            float_vector3d::value_type crossing;
             if(x_ray_intersection(triangle, yzvt.first + xy_center,
                     crossing)) {
                 crossings.push_back(crossing);
@@ -320,7 +320,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             for(float coord = crossings[i]; coord < crossings[i + 1]; 
                     ++coord) {
                 int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord);
+                        static_cast<int_vector3d::value_type>(coord + 0.5);
                 yzvox.set_voxel(
                         coord_i - min_xyz.x, 
                         yzvt.first.x - min_xyz.y,
@@ -334,7 +334,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     for(const bucket_map::value_type& zxvt : zxb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : zxvt.second) {
-            float crossing;
+            float_vector3d::value_type crossing;
             if(y_ray_intersection(triangle, zxvt.first + xy_center,
                     crossing)) {
                 crossings.push_back(crossing);
@@ -345,7 +345,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             for(float coord = crossings[i]; coord < crossings[i + 1]; 
                     ++coord) {
                 int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord);
+                        static_cast<int_vector3d::value_type>(coord + 0.5);
                 zxvox.set_voxel(
                         zxvt.first.y - min_xyz.x, 
                         coord_i - min_xyz.y,
@@ -376,7 +376,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     ++count;
                     ++zx_count;
                 }
-                if(count > 1) {
+                if(count == 3) {
                     ret.set_voxel(x, y, z, voxel(true, true));
                 }
             }
