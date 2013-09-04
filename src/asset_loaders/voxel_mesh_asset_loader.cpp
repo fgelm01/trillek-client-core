@@ -95,108 +95,18 @@ data* voxel_mesh_asset_loader::load(const std::string& file) const {
     }
     std::cerr << "Extracted " << all_triangles.size() 
             << " triangles" << std::endl;
-    const float_vector3d::value_type MIN_VAL = 
-            std::numeric_limits<float_vector3d::value_type>::min();
-    const float_vector3d::value_type MAX_VAL = 
-            std::numeric_limits<float_vector3d::value_type>::max();
-    float_vector3d min_extent = make_vector3d(MAX_VAL, MAX_VAL, MAX_VAL);
-    float_vector3d max_extent = make_vector3d(MIN_VAL, MIN_VAL, MIN_VAL);
-    for(const float_triangle3d& cur_triangle : all_triangles) {
-        size_t index = 0;
-        for(const float_vector3d& cur_vector : cur_triangle) {
-            if(++index>=3) break;
-            min_extent = make_vector3d(
-                    std::min(min_extent.x, cur_vector.x), 
-                    std::min(min_extent.y, cur_vector.y), 
-                    std::min(min_extent.z, cur_vector.z));
-            max_extent = make_vector3d(
-                    std::max(max_extent.x, cur_vector.x), 
-                    std::max(max_extent.y, cur_vector.y), 
-                    std::max(max_extent.z, cur_vector.z));
-        }
-    }
-    min_extent -= make_vector3d(4,4,4);
-    max_extent += make_vector3d(3,3,3);
-    std::cerr << "Extents are " << min_extent << ", " << 
-            max_extent << std::endl;
-    bucket_map buckets; //bucket triangles by xy coordinates
-    for(const float_triangle3d& cur_triangle : all_triangles) {
-        float_vector2d min_triextents = make_vector2d(MAX_VAL, MAX_VAL);
-        float_vector2d max_triextents = make_vector2d(MIN_VAL, MIN_VAL);
-        size_t index = 0;
-        for(const float_vector3d& cur_vector : cur_triangle) {
-            if(++index>=3) break;
-            min_triextents = make_vector2d(
-                    std::min(min_triextents.x, cur_vector.x),
-                    std::min(min_triextents.y, cur_vector.y));
-            max_triextents = make_vector2d(
-                    std::max(max_triextents.x, cur_vector.x),
-                    std::max(max_triextents.y, cur_vector.y));
-        }
-        int_vector2d min_bucket = min_triextents;
-        int_vector2d max_bucket = max_triextents;
-        max_bucket += make_vector2d(1,1);
-        min_bucket -= make_vector2d(1,1);
-        for(int_vector2d::value_type y = min_bucket.y; 
-                y <= max_bucket.y; ++y) {
-            for(int_vector2d::value_type x = min_bucket.x; 
-                    x <= max_bucket.x; ++x) {
-                buckets[make_vector2d(x,y)].push_back(std::ref(cur_triangle));
-            }
-        }
-    }
-    voxel_data::size_vector3d extents = (max_extent - min_extent) + 
-            make_vector3d(4,4,4);
-    voxel_octree* ret = new voxel_octree();
-    ret->reserve_space(extents);
-    std::cerr << "There are " << buckets.size() << " buckets" << std::endl;
-    for(const bucket_map::value_type& vt : buckets) {
-        int_vector2d xy = vt.first;
-        size_vector2d xyvoxel = xy - min_extent.to_vector2d();
-//        std::cerr << "\nI work at " << xy << std::endl;
-//        std::cerr << "I see " << vt.second.size() << " triangles" << std::endl;
-        std::set<float> crossings;
-        for(const float_triangle3d& cur_triangle : vt.second) {
-            float out;
-            if(z_ray_intersection(cur_triangle, xy, out)) {
-                //crossings.push_back(out);
-                crossings.insert(out);
-            }
-        }
-//        std::cerr << "\nI see " << crossings.size() << 
-//                " crossings" << std::endl;
-        //std::sort(crossings.begin(), crossings.end());
-        for(std::set<float>::iterator iter = crossings.begin(); 
-                iter != crossings.end(); 
-                ++iter) {
-            std::set<float>::iterator next = iter;
-            ++next;
-            if(next != crossings.end()) {
-                for(std::size_t z = 
-                        static_cast<size_t>(*iter - min_extent.z);
-                        z <= static_cast<size_t>(*next - min_extent.z); 
-                        ++z) {
-                    ret->set_voxel(xyvoxel.x, xyvoxel.y, z, 
-                            voxel(true, true));
-                }
-                iter = next;
-            } else {
-                std::cerr << "MANIFOLD PROBLEM!" << std::endl;
-            }
-        }
-    }
-    return ret;
+    return new voxel_octree(voxelize_mesh(all_triangles));
 }
 
 bool z_ray_intersection(const float_triangle3d& triangle, 
         const float_vector2d& xy, float& out) {
     const float_triangle2d triangle2d = {{
-            triangle[0].to_vector2d(),
-            triangle[1].to_vector2d(),
-            triangle[2].to_vector2d()}};
+            float_vector2d(triangle[0].x, triangle[0].y),
+            float_vector2d(triangle[1].x, triangle[1].y),
+            float_vector2d(triangle[2].x, triangle[2].y)}};
     if(consistent_point_in_triangle(triangle2d, xy)) {
         const float_vector3d& norm = triangle[3];
-        float_vector2d point = xy - triangle[0].to_vector2d();
+        float_vector2d point = xy - triangle2d[0];
         out = triangle[0].z - point.x * (norm.x / norm.z) - 
                 point.y * (norm.y / norm.z);
         return true;
@@ -204,32 +114,37 @@ bool z_ray_intersection(const float_triangle3d& triangle,
         return false;
     }
 }
-float_vector3d rotr(const float_vector3d& arg) {
-    return make_vector3d(arg.y, arg.z, arg.x);
-}
-float_triangle3d rotr(const float_triangle3d& arg) {
-    float_triangle3d ret;
-    for(std::size_t i = 0; i < arg.size(); ++i) {
-        ret[i] = rotr(arg[i]);
-    }
-    return ret;
-}
 bool y_ray_intersection(const float_triangle3d& triangle, 
         const float_vector2d& zx, float& out) {
-    return z_ray_intersection(rotr(triangle), zx, out);
+    const float_triangle2d triangle2d = {{
+            float_vector2d(triangle[0].z, triangle[0].x),
+            float_vector2d(triangle[1].z, triangle[1].x),
+            float_vector2d(triangle[2].z, triangle[2].x)}};
+    if(consistent_point_in_triangle(triangle2d, zx)) {
+        const float_vector3d& norm = triangle[3];
+        float_vector2d point = zx - triangle2d[0];
+        out = triangle[0].y - point.x * (norm.z / norm.y) - 
+                point.y * (norm.x / norm.y);
+        return true;
+    } else {
+        return false;
+    }
 }
 bool x_ray_intersection(const float_triangle3d& triangle, 
         const float_vector2d& yz, float& out) {
-    return y_ray_intersection(rotr(triangle), yz, out);
-}
-
-struct Point { int x,y; };
-
-inline int
-isLeft( Point P0, Point P1, Point P2 )
-{
-    return ( (P1.x - P0.x) * (P2.y - P0.y)
-            - (P2.x -  P0.x) * (P1.y - P0.y) );
+    const float_triangle2d triangle2d = {{
+            float_vector2d(triangle[0].y, triangle[0].z),
+            float_vector2d(triangle[1].y, triangle[1].z),
+            float_vector2d(triangle[2].y, triangle[2].z)}};
+    if(consistent_point_in_triangle(triangle2d, yz)) {
+        const float_vector3d& norm = triangle[3];
+        float_vector2d point = yz - triangle2d[0];
+        out = triangle[0].x - point.x * (norm.y / norm.x) - 
+                point.y * (norm.z / norm.x);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int x_compute_winding(const float_triangle2d& triangle, 
@@ -314,7 +229,8 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     auto bucket_triangle = [&xyb, &yzb, &zxb, &min_xyz, &max_xyz](
             const float_vector3d& min_extents,
             const float_vector3d& max_extents, 
-            const float_triangle3d& arg)->void {
+            const float_triangle3d& arg)->std::size_t {
+        std::size_t ret = 0;
         int_vector3d min_int(
                 std::floor(min_extents.x),
                 std::floor(min_extents.y),
@@ -340,21 +256,31 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     xyb[int_vector2d(x,y)].push_back(std::ref(arg));
                     yzb[int_vector2d(y,z)].push_back(std::ref(arg));
                     zxb[int_vector2d(z,x)].push_back(std::ref(arg));
+                    ++ret;
                 }
             }
         }
+        return ret;
     };
+    std::cerr << "Building buckets" << std::endl;
     for(const float_triangle3d& triangle : all_triangles) {
         float_vector3d min_extents, max_extents;
         std::tie(min_extents, max_extents) = triangle_extents(triangle);
-        bucket_triangle(min_extents, max_extents, triangle);
+        //std::cerr << 
+                bucket_triangle(min_extents, max_extents, triangle);
+        //std::cerr << ", ";
     }
+    std::cerr << "Bucket counts are " << 
+            "\n\t" << xyb.size() << 
+            "\n\t" << yzb.size() << 
+            "\n\t" << zxb.size() << std::endl;
     voxel_data::size_vector3d size_extent = (max_xyz - min_xyz);
     voxel_array_alternate xyvox, yzvox, zxvox;
     xyvox.reserve_space(size_extent);
     yzvox.reserve_space(size_extent);
     zxvox.reserve_space(size_extent);
     static const float_vector2d xy_center(0.5, 0.5);
+    std::cerr << "Voxelizing x-y plane... ";
     for(const bucket_map::value_type& xyvt : xyb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : xyvt.second) {
@@ -370,11 +296,16 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     ++coord) {
                 int_vector3d::value_type coord_i = 
                         static_cast<int_vector3d::value_type>(coord);
-                xyvox.set_voxel(xyvt.first.x, xyvt.first.y, 
-                        coord_i, voxel(true, true));
+                xyvox.set_voxel(
+                        xyvt.first.x - min_xyz.x, 
+                        xyvt.first.y - min_xyz.y, 
+                        coord_i - min_xyz.z, 
+                        voxel(true, true));
             }
         }
     }
+    std::cerr << "DONE!" << std::endl;
+    std::cerr << "Voxelizing y-z plane... ";
     for(const bucket_map::value_type& yzvt : yzb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : yzvt.second) {
@@ -390,11 +321,16 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     ++coord) {
                 int_vector3d::value_type coord_i = 
                         static_cast<int_vector3d::value_type>(coord);
-                yzvox.set_voxel(coord_i, yzvt.first.x,
-                        yzvt.first.y, voxel(true, true));
+                yzvox.set_voxel(
+                        coord_i - min_xyz.x, 
+                        yzvt.first.x - min_xyz.y,
+                        yzvt.first.y - min_xyz.z, 
+                        voxel(true, true));
             }
         }
     }
+    std::cerr << "DONE!" << std::endl;
+    std::cerr << "Voxelizing z-x plane... ";
     for(const bucket_map::value_type& zxvt : zxb) {
         crossing_vector crossings;
         for(const float_triangle3d& triangle : zxvt.second) {
@@ -410,11 +346,18 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     ++coord) {
                 int_vector3d::value_type coord_i = 
                         static_cast<int_vector3d::value_type>(coord);
-                zxvox.set_voxel(zxvt.first.y, coord_i,
-                        zxvt.first.x, voxel(true, true));
+                zxvox.set_voxel(
+                        zxvt.first.y - min_xyz.x, 
+                        coord_i - min_xyz.y,
+                        zxvt.first.x - min_xyz.z, 
+                        voxel(true, true));
             }
         }
     }
+    std::cerr << "DONE!" << std::endl;
+    std::size_t xy_count = 0;
+    std::size_t yz_count = 0;
+    std::size_t zx_count = 0;
     voxel_octree ret;
     ret.reserve_space(size_extent);
     for(std::size_t z = 0; z < size_extent.z; ++z) {
@@ -423,12 +366,15 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                 int count = 0;
                 if(xyvox.get_voxel(x,y,z).is_opaque()) {
                     ++count;
+                    ++xy_count;
                 }
                 if(yzvox.get_voxel(x,y,z).is_opaque()) {
                     ++count;
+                    ++yz_count;
                 }
                 if(zxvox.get_voxel(x,y,z).is_opaque()) {
                     ++count;
+                    ++zx_count;
                 }
                 if(count > 1) {
                     ret.set_voxel(x, y, z, voxel(true, true));
@@ -436,6 +382,13 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             }
         }
     }
+    std::cerr << "Voxel counts are: " << 
+            "\n\t" << xy_count << 
+            "\n\t" << yz_count << 
+            "\n\t" << zx_count << std::endl;
+    std::cerr << "Final result has filled volume " << ret.get_opaque_volume()
+            << std::endl;
+    std::cerr << "Final result has nodes " << ret.get_num_nodes() << std::endl;
     return ret;
 }
 
