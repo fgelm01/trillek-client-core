@@ -2,6 +2,7 @@
 #include "data/mesh_data.h"
 #include "data/voxel_octree.h"
 #include "data/voxel_array.h"
+#include "data/basic_octree.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

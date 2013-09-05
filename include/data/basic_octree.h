@@ -35,11 +35,16 @@ public:
     basic_octree(basic_octree&& other);
     octree_index_t size() const;
     void resize(octree_index_t target_size);
+    //unset points not valid
     const_reference operator [](octree_index_t ind) const;
+    //unset points not valid
     const_reference get_data(octree_index_t ind) const;
+    //unset points return def
+    const_reference get_data_default(octree_index_t ind,
+            const_reference def) const;
     template <typename U>   //convertable to T
     void set_data(octree_index_t ind, U&& data);
-    void unset_data(octree_index_t ind) {assert(0);}
+    void unset_data(octree_index_t ind);
 private:
     std::pair<std::size_t, octree_index_t> compute_child_access(
             octree_index_t ind) const;
@@ -102,7 +107,8 @@ typename basic_octree<T>::const_reference basic_octree<T>::operator [](
     return get_data(ind);
 }
 template <typename T>
-typename basic_octree<T>::const_reference basic_octree<T>::get_data(octree_index_t ind) const {
+typename basic_octree<T>::const_reference basic_octree<T>::get_data(
+        octree_index_t ind) const {
     std::size_t child_index;
     octree_index_t child_access;
     std::tie(child_index, child_access) = compute_child_access(ind);
@@ -111,6 +117,20 @@ typename basic_octree<T>::const_reference basic_octree<T>::get_data(octree_index
         return *m_data.get();
     } else if(m_has_children) {
         return m_children[child_index].get()->get_data(child_access);
+    }
+}
+template <typename T>
+typename basic_octree<T>::const_reference basic_octree<T>::get_data_default(
+        octree_index_t ind, const_reference def) const {
+    std::size_t child_index;
+    octree_index_t child_access;
+    std::tie(child_index, child_access) = compute_child_access(ind);
+    if(m_has_data) {
+        return *m_data.get();
+    } else if(m_has_children) {
+        return m_children[child_index].get()->get_data(child_access);
+    } else {
+        return def;
     }
 }
 template <typename T> template <typename U>
