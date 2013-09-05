@@ -44,18 +44,6 @@ void mesh_data::add_Polygon(vector3d<float> v1,
     data3.x =v3.x;data3.y =v3.y;data3.z =v3.z;
     data3.nx=n3.x;data3.ny=n3.y;data3.nz=n3.z;
     vertex_buffer.push_back(data3);
-
-    //std::cerr << "Adding Polygon" << std::endl;
-    //std::cerr << v1.x << "/" << v1.y << "/" << v1.z << std::endl;
-    //std::cerr << n1.x << "/" << n1.y << "/" << n1.z << std::endl;
-    glBegin(GL_LINES);
-        glVertex3f(v1.x     ,v1.y     ,v1.z);
-        glVertex3f(v1.x+n1.x,v1.y+n1.y,v1.z+n1.z);
-        glVertex3f(v2.x     ,v2.y     ,v2.z);
-        glVertex3f(v2.x+n2.x,v2.y+n2.y,v2.z+n2.z);
-        glVertex3f(v3.x     ,v3.y     ,v3.z);
-        glVertex3f(v3.x+n3.x,v3.y+n3.y,v3.z+n3.z);
-    glEnd();
 }
 
 }

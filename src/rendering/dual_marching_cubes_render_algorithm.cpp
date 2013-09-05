@@ -139,11 +139,14 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                     min_size_x=n[5]->get_size().x;
                 if(n[7]->get_size().x < min_size_x)
                     min_size_x=n[7]->get_size().x;
-                // X-Axis Edge
-                axis_aligned_box x_edge_box=center_box;
-                x_edge_box.set_widths((float)min_size_x-size,size,size);
-                x_edge_box.translate(min_size_x/2.0f,0,0);
-                marching_cubes_render_algorithm::step(x_edge_box,cube_num,model,data);
+                if(min_size_x>size)
+                {
+                    // X-Axis Edge
+                    axis_aligned_box x_edge_box=center_box;
+                    x_edge_box.set_widths((float)min_size_x-size,size,size);
+                    x_edge_box.translate(min_size_x/2.0f,0,0);
+                    marching_cubes_render_algorithm::step(x_edge_box,cube_num,model,data);
+                }
             }
         }
 
@@ -162,11 +165,14 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                     min_size_y=n[6]->get_size().x;
                 if(n[7]->get_size().x < min_size_y)
                     min_size_y=n[7]->get_size().x;
-                // Y-Axis Edge
-                axis_aligned_box y_edge_box=center_box;
-                y_edge_box.set_widths(size,(float)min_size_y-size,size);
-                y_edge_box.translate(0,min_size_y/2.0f,0);
-                marching_cubes_render_algorithm::step(y_edge_box,cube_num,model,data);
+                if(min_size_y>size)
+                {
+                    // Y-Axis Edge
+                    axis_aligned_box y_edge_box=center_box;
+                    y_edge_box.set_widths(size,(float)min_size_y-size,size);
+                    y_edge_box.translate(0,min_size_y/2.0f,0);
+                    marching_cubes_render_algorithm::step(y_edge_box,cube_num,model,data);
+                }
             }
         }
 
@@ -185,11 +191,14 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                     min_size_z=n[6]->get_size().x;
                 if(n[7]->get_size().x < min_size_z)
                     min_size_z=n[7]->get_size().x;
-                // Z-Axis Edge
-                axis_aligned_box z_edge_box=center_box;
-                z_edge_box.set_widths(size,size,(float)min_size_z-size);
-                z_edge_box.translate(0,0,min_size_z/2.0f);
-                marching_cubes_render_algorithm::step(z_edge_box,cube_num,model,data);
+                if(min_size_z>size)
+                {
+                    // Z-Axis Edge
+                    axis_aligned_box z_edge_box=center_box;
+                    z_edge_box.set_widths(size,size,(float)min_size_z-size);
+                    z_edge_box.translate(0,0,min_size_z/2.0f);
+                    marching_cubes_render_algorithm::step(z_edge_box,cube_num,model,data);
+                }
             }
         }
 
