@@ -14,6 +14,7 @@ public:
 
     bool is_standard() const;
     bool is_opaque() const;
+    std::size_t value() const;
     /**
      * Average up the voxels in this range
      * @param begin

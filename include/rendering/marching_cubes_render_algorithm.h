@@ -15,7 +15,16 @@ class marching_cubes_render_algorithm
     public:
         marching_cubes_render_algorithm();
         virtual ~marching_cubes_render_algorithm();
+        void process(voxel_model* node, std::shared_ptr<mesh_data> model);
         void process(voxel_model* node, graphics_service* service);
+        static vector3d<float> calculate_gradient(std::size_t pos_x,
+                                                  std::size_t pos_y,
+                                                  std::size_t pos_z,
+                                                  unsigned char x,
+                                                  unsigned char y,
+                                                  unsigned char z,
+                                                  unsigned char def,
+                                                  voxel_data* data);
         static unsigned char calculate_cube_num(voxel& v0,voxel& v1,
                                                 voxel& v2,voxel& v3,
                                                 voxel& v4,voxel& v5,
@@ -23,16 +32,19 @@ class marching_cubes_render_algorithm
         static void step(vector3d<float> pos,
                          unsigned char num,
                          float size,
-                         std::shared_ptr<mesh_data> model);
+                         std::shared_ptr<mesh_data> model,
+                         voxel_data* data);
         static void step(axis_aligned_box& box,
                          unsigned char num,
-                         std::shared_ptr<mesh_data> model);
+                         std::shared_ptr<mesh_data> model,
+                         voxel_data* data);
         static void step(vector3d<float> p0,vector3d<float> p1,
                          vector3d<float> p2,vector3d<float> p3,
                          vector3d<float> p4,vector3d<float> p5,
                          vector3d<float> p6,vector3d<float> p7,
                          unsigned char cubeindex,
-                         std::shared_ptr<mesh_data> model);
+                         std::shared_ptr<mesh_data> model,
+                         voxel_data* data);
     protected:
     private:
 };

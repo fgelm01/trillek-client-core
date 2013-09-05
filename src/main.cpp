@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         r_t->get_master()->add_child(v_m);
 
         auto light = std::make_shared<trillek::light_source>(1,0,0);
-        auto trans = std::make_shared<trillek::transformation_node>(-10,10,-20);
+        auto trans = std::make_shared<trillek::transformation_node>(0,80,0);
 
         trans->add_child(light);
         r_t->get_master()->add_child(trans);

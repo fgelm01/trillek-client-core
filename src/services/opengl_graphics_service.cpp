@@ -195,16 +195,6 @@ void opengl_graphics_service::register_model(uintptr_t ID,
 {
     model_recall_data recall_data;
 
-
-    // Indices Data
-    std::vector<unsigned int>* indices=data->get_indices();
-    glGenBuffers(1,&recall_data.indices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recall_data.indices);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 indices->size()*sizeof(unsigned int),
-                 &(*indices)[0], GL_STATIC_DRAW);
-    recall_data.size=indices->size();
-
     // Vertex Data
     std::vector<vertex_data>* vertices=data->get_vertex_data();
     glGenBuffers(1,&recall_data.vertices);
@@ -212,6 +202,7 @@ void opengl_graphics_service::register_model(uintptr_t ID,
     glBufferData(GL_ARRAY_BUFFER,
                  vertices->size()*sizeof(vertex_data),
                  &(*vertices)[0], GL_STATIC_DRAW);
+    recall_data.size=vertices->size();
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, sizeof(vertex_data), 0);
@@ -231,8 +222,7 @@ void opengl_graphics_service::recall_model(uintptr_t ID)
     model_recall_data recall_data=this->model_recall_buffer[ID];
 
     glBindBuffer(GL_ARRAY_BUFFER, recall_data.vertices);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recall_data.indices);
-    glDrawElements(GL_TRIANGLES, recall_data.size, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES,0,  recall_data.size);
 }
 
 }

@@ -12,7 +12,6 @@ struct light_settings;
 struct  model_recall_data
 {
     unsigned int vertices;
-    unsigned int indices;
     unsigned int size;
 };
 

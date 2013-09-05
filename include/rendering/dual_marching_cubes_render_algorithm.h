@@ -18,28 +18,37 @@ private:
                            voxel_octree* n2,voxel_octree* n3,
                            voxel_octree* n4,voxel_octree* n5,
                            voxel_octree* n6,voxel_octree* n7,
-                           std::shared_ptr<mesh_data> model);
+                           std::shared_ptr<mesh_data> model,
+                           voxel_data* data);
     void vertProc(voxel_octree* n0,voxel_octree* n1,
                   voxel_octree* n2,voxel_octree* n3,
                   voxel_octree* n4,voxel_octree* n5,
                   voxel_octree* n6,voxel_octree* n7,
-                  std::shared_ptr<mesh_data> model);
+                  std::shared_ptr<mesh_data> model,
+                  voxel_data* data);
     void edgeProcX(voxel_octree* n0,voxel_octree* n1,
                    voxel_octree* n2,voxel_octree* n3,
-                   std::shared_ptr<mesh_data> model);
+                   std::shared_ptr<mesh_data> model,
+                   voxel_data* data);
     void edgeProcY(voxel_octree* n0,voxel_octree* n1,
                    voxel_octree* n2,voxel_octree* n3,
-                   std::shared_ptr<mesh_data> model);
+                   std::shared_ptr<mesh_data> model,
+                   voxel_data* data);
     void edgeProcZ(voxel_octree* n0,voxel_octree* n1,
                    voxel_octree* n2,voxel_octree* n3,
-                   std::shared_ptr<mesh_data> model);
+                   std::shared_ptr<mesh_data> model,
+                   voxel_data* data);
     void faceProcXY(voxel_octree* n0,voxel_octree* n1,
-                    std::shared_ptr<mesh_data> model);
+                    std::shared_ptr<mesh_data> model,
+                    voxel_data* data);
     void faceProcYZ(voxel_octree* n0,voxel_octree* n1,
-                    std::shared_ptr<mesh_data> model);
+                    std::shared_ptr<mesh_data> model,
+                    voxel_data* data);
     void faceProcXZ(voxel_octree* n0,voxel_octree* n1,
-                    std::shared_ptr<mesh_data> model);
-    void nodeProc(voxel_octree* n,std::shared_ptr<mesh_data> model);
+                    std::shared_ptr<mesh_data> model,
+                    voxel_data* data);
+    void nodeProc(voxel_octree* n,std::shared_ptr<mesh_data> model,
+                  voxel_data* data);
     void process(voxel_model* node,graphics_service* service);
 };
 
