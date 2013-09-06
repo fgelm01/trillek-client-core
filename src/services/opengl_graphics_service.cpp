@@ -26,7 +26,6 @@ opengl_graphics_service::~opengl_graphics_service()
 void opengl_graphics_service::prepare_rendering()
 {
     glEnable(GL_DEPTH_TEST);
-    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     const float amb = 2.0;

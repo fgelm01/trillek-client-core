@@ -3,6 +3,8 @@
 #include "services/graphics_service.h"
 #include <SFML/OpenGL.hpp>
 #include "math/axis_aligned_box.h"
+#include "general/count_unique_params.h"
+#include "general/min_max.h"
 namespace trillek
 {
 
@@ -16,33 +18,43 @@ dual_marching_cubes_render_algorithm::~dual_marching_cubes_render_algorithm()
     //dtor
 }
 
-bool check_if_ptr_unique(intptr_t& p,
-                         std::array<intptr_t,4>& a,
-                         unsigned char& num_ptrs)
+template <typename... Args>
+auto values_to_cube_num(Args&&... args) ->
+decltype(marching_cubes_render_algorithm::values_to_cube_num(
+                std::forward<Args>(args)...))
 {
-    for(unsigned char i=0; i<num_ptrs;++i) {
-        if(a[i]==p) {
-            return false;
-        }else if(i==num_ptrs-1) {
-            a[num_ptrs]=p;
-            num_ptrs++;
-            return true;
-        }
+  return marching_cubes_render_algorithm::values_to_cube_num(
+        std::forward<Args>(args)...);
+}
+
+template <typename... T>
+std::size_t process_dual_cell_box(std::size_t cube_num,
+                            std::shared_ptr<mesh_data> model,
+                            axis_aligned_box& center_box,
+                            std::size_t type,
+                            voxel_data* data,
+                            T... n)
+{
+    float size=1.0f;
+    static_assert(are_same<voxel_data*,T..>::value,
+        "Tried to call process_duall_cell_box with a \
+        type other then voxel_octree*");
+    std::size_t min_size=min((n->get_size().x)...);
+    if(min_size>size)
+    {
+        axis_aligned_box face_box=center_box;
+        face_box.set_widths(type&0x1?(float)min_size-size:size,
+                            type&0x2?(float)min_size-size:size,
+                            type&0x4?(float)min_size-size:size);
+        face_box.translate(type&0x1?min_size/2.0f:0,
+                            type&0x2?min_size/2.0f:0,
+                            type&0x4?min_size/2.0f:0);
+        marching_cubes_render_algorithm::step(face_box,cube_num,model,data);
     }
+    return min_size;
 }
 
-unsigned char count_unique_ptrs(intptr_t p0,intptr_t p1,
-                                intptr_t p2,intptr_t p3) {
-    unsigned char num_ptrs=1;
-    std::array<intptr_t,4> unique_ptrs;
-    unique_ptrs[0]=p0;
-    check_if_ptr_unique(p1,unique_ptrs,num_ptrs);
-    check_if_ptr_unique(p2,unique_ptrs,num_ptrs);
-    check_if_ptr_unique(p3,unique_ptrs,num_ptrs);
-    return num_ptrs;
-}
-
-void process_dual_cell_face(voxel_octree* n0,
+std::size_t process_dual_cell_face(voxel_octree* n0,
                             voxel_octree* n1,
                             std::size_t cube_num,
                             std::shared_ptr<mesh_data> model,
@@ -52,24 +64,36 @@ void process_dual_cell_face(voxel_octree* n0,
 {
     if(cube_num!=0&&cube_num!=255)
     {
-        float size=1.0f;
-        if(n0!=n1)
+        if(count_unique_params(n0,n1)>=2)
         {
-            std::size_t min_size=std::min(n0->get_size().x,
-                                          n1->get_size().x);
-            if(min_size-1.0f>0)
-            {
-                axis_aligned_box face_box=center_box;
-                face_box.set_widths(type&0x1?(float)min_size-size:size,
-                                    type&0x2?(float)min_size-size:size,
-                                    type&0x4?(float)min_size-size:size);
-                face_box.translate(type&0x1?min_size/2.0f:0,
-                                   type&0x2?min_size/2.0f:0,
-                                   type&0x4?min_size/2.0f:0);
-                marching_cubes_render_algorithm::step(face_box,cube_num,model,data);
-            }
+            return process_dual_cell_box(cube_num,model,
+                                         center_box,type,data,
+                                         n0,n1);
         }
     }
+    return 0;
+}
+
+std::size_t process_dual_cell_edge(voxel_octree* n0,
+                                   voxel_octree* n1,
+                                   voxel_octree* n2,
+                                   voxel_octree* n3,
+                                   std::size_t cube_num,
+                                   std::shared_ptr<mesh_data> model,
+                                   axis_aligned_box& center_box,
+                                   std::size_t type,
+                                   voxel_data* data)
+{
+    if(cube_num!=0&&cube_num!=255)
+    {
+        if(count_unique_params(n0,n1,n2,n3)>2)
+        {
+            return process_dual_cell_box(cube_num,model,
+                                         center_box,type,data,
+                                         n0,n1,n2,n3);
+        }
+    }
+    return 0;
 }
 
 void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
@@ -83,146 +107,113 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                                              std::shared_ptr<mesh_data> model,
                                                              voxel_data* data)
 {
+    /*
+        The rest of this algorithm is currently using the ordering
+        x -> z -> y
+        while this function and the rest of the program uses:
+        x -> y -> z
+        this is being "fixed" here, until the rest of the algorithm can be
+        altered to comply with the standard used in the rest of the program
+    */
+
     std::array<voxel,8> v = {n0->get_voxel(),n1->get_voxel(),
                              n4->get_voxel(),n5->get_voxel(),
                              n2->get_voxel(),n3->get_voxel(),
                              n6->get_voxel(),n7->get_voxel()};
-    std::size_t cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[0],v[1],v[2],v[3],
-                                                        v[4],v[5],v[6],v[7]);
+    std::array<voxel_octree*,8> n={n0,n1,n4,n5,n2,n3,n6,n7};
 
+
+    // First the cube_num is calculated, since we can skip the entire rest of
+    // this function if the cube is entirely full(255) or empty(0)
+    std::size_t cube_num= values_to_cube_num(v[0],v[1],v[2],v[3],
+                                             v[4],v[5],v[6],v[7]);
     if(cube_num==0||cube_num==255)
         return;
-    std::array<voxel_octree*,8> n={n0,n1,n4,n5,n2,n3,n6,n7};
+
+    // The cube is being intersected by the surface, so now we calculate which edge of
+    // the cube is touched by all 8 voxel_octrees (they have to be nodes)
+    // For this we find the smallest cube
+    // and while we are at it we also find the biggest size, which will be needed later
     std::size_t min_size_num=0;
 	std::size_t min_size=n0->get_size().x;
 	std::size_t max_size=min_size;
-    for(int i=1; i<8;++i)
-    {
-        if(n[i]->get_size().x<min_size)
-        {
+    for(int i=1; i<8;++i) {
+        if(n[i]->get_size().x<min_size) {
             min_size=n[i]->get_size().x;
             min_size_num=i;
         }
-        if(n[i]->get_size().x>max_size)
-        {
+        if(n[i]->get_size().x>max_size) {
             max_size=n[i]->get_size().x;
         }
     }
     float size=1.0f;
 
+    // Since we now have the smallest cube we can calculate the corner that all the
+    // nodes share
     auto new_offset=n[min_size_num]->get_child_offset_by_index(min_size_num);
     auto new_center =n[min_size_num]->get_offset()
                      -new_offset*2
                      -vector3d<float>(size/2,size/2,size/2);
 
+    // Which we then make into an axis_aligned_box,
+    // with the minimum (1.0) width, height and depth
     axis_aligned_box center_box(new_center,vector3d<std::size_t>(size,
                                                                  size,
                                                                  size));
-
     marching_cubes_render_algorithm::step(center_box,cube_num,model,data);
-    if(max_size>size)
-    {
-        std::size_t min_size_x=0,min_size_y=0,min_size_z=0;
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[1],v[1],v[3],v[3],
-                                                        v[5],v[5],v[7],v[7]);
-        if(cube_num!=0&&cube_num!=255)
-        {
-            if(count_unique_ptrs((intptr_t)n[1],(intptr_t)n[3],
-                                 (intptr_t)n[5],(intptr_t)n[7])>2)
-            {
-                min_size_x=n[1]->get_size().x;
-                if(n[3]->get_size().x < min_size_x)
-                    min_size_x=n[3]->get_size().x;
-                if(n[5]->get_size().x < min_size_x)
-                    min_size_x=n[5]->get_size().x;
-                if(n[7]->get_size().x < min_size_x)
-                    min_size_x=n[7]->get_size().x;
-                if(min_size_x>size)
-                {
-                    // X-Axis Edge
-                    axis_aligned_box x_edge_box=center_box;
-                    x_edge_box.set_widths((float)min_size_x-size,size,size);
-                    x_edge_box.translate(min_size_x/2.0f,0,0);
-                    marching_cubes_render_algorithm::step(x_edge_box,cube_num,model,data);
-                }
-            }
-        }
 
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[2],v[3],v[2],v[3],
-                                                        v[6],v[7],v[6],v[7]);
-        if(cube_num!=0&&cube_num!=255)
-        {
-            if(count_unique_ptrs((intptr_t)n[2],(intptr_t)n[3],
-                                 (intptr_t)n[6],(intptr_t)n[7])>2)
-            {
-                min_size_y=n[2]->get_size().x;
-                if(n[3]->get_size().x < min_size_y)
-                    min_size_y=n[3]->get_size().x;
-                if(n[6]->get_size().x < min_size_y)
-                    min_size_y=n[6]->get_size().x;
-                if(n[7]->get_size().x < min_size_y)
-                    min_size_y=n[7]->get_size().x;
-                if(min_size_y>size)
-                {
-                    // Y-Axis Edge
-                    axis_aligned_box y_edge_box=center_box;
-                    y_edge_box.set_widths(size,(float)min_size_y-size,size);
-                    y_edge_box.translate(0,min_size_y/2.0f,0);
-                    marching_cubes_render_algorithm::step(y_edge_box,cube_num,model,data);
-                }
-            }
-        }
+    // Edges and Faces only need to be computed if that corner is not
+    // completely filled by the box above, as in one of the nodes at
+    // that corner has a size bigger then the minimum possible size(1.0)
+    if(max_size>size) {
+        // Now we compute the 3 positive axes and keep their length
 
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[4],v[5],v[6],v[7],
-                                                        v[4],v[5],v[6],v[7]);
-        if(cube_num!=0&&cube_num!=255)
-        {
-            if(count_unique_ptrs((intptr_t)n[4],(intptr_t)n[5],
-                                 (intptr_t)n[6],(intptr_t)n[7])>2)
-            {
-                min_size_z=n[4]->get_size().x;
-                if(n[5]->get_size().x < min_size_z)
-                    min_size_z=n[5]->get_size().x;
-                if(n[6]->get_size().x < min_size_z)
-                    min_size_z=n[6]->get_size().x;
-                if(n[7]->get_size().x < min_size_z)
-                    min_size_z=n[7]->get_size().x;
-                if(min_size_z>size)
-                {
-                    // Z-Axis Edge
-                    axis_aligned_box z_edge_box=center_box;
-                    z_edge_box.set_widths(size,size,(float)min_size_z-size);
-                    z_edge_box.translate(0,0,min_size_z/2.0f);
-                    marching_cubes_render_algorithm::step(z_edge_box,cube_num,model,data);
-                }
-            }
-        }
+        // X-Axis
+        std::size_t min_size_x=process_dual_cell_edge(
+                                            n[1],n[3],n[5],n[7],
+                                            values_to_cube_num(v[1],v[1],
+                                                               v[3],v[3],
+                                                               v[5],v[5],
+                                                               v[7],v[7]),
+                                            model,center_box,0x1,data);
 
+        // Y-Axis
+        std::size_t min_size_y=process_dual_cell_edge(
+                                            n[2],n[3],n[6],n[7],
+                                            values_to_cube_num(v[2],v[3],
+                                                               v[2],v[3],
+                                                               v[6],v[7],
+                                                               v[6],v[7]),
+                                            model,center_box,0x2,data);
+
+        // Z-Axis
+        std::size_t min_size_z=process_dual_cell_edge(
+                                            n[4],n[5],n[6],n[7],
+                                            values_to_cube_num(v[4],v[5],
+                                                               v[6],v[7],
+                                                               v[4],v[5],
+                                                               v[6],v[7]),
+                                            model,center_box,0x4,data);
+
+        // And last we compute the 3 faces between the 3 positive axes above
+        // they are only drawn if both axes have a length > 0 since otherwise
+        // one of their lengths would be 0 as well, resulting in unneded
+        // processing and drawing
         // XY-Face
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[3],v[3],v[3],v[3],
-                                                        v[7],v[7],v[7],v[7]);
         if(min_size_x != 0 && min_size_y != 0) {
+            cube_num=values_to_cube_num(v[3],v[3],v[3],v[3],v[7],v[7],v[7],v[7]);
             process_dual_cell_face(n[3],n[7],cube_num,model,center_box,0x3,data);
         }
 
         // YZ-Face
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[6],v[7],v[6],v[7],
-                                                        v[6],v[7],v[6],v[7]);
         if(min_size_y != 0 && min_size_z != 0) {
+            cube_num=values_to_cube_num(v[6],v[7],v[6],v[7],v[6],v[7],v[6],v[7]);
             process_dual_cell_face(n[6],n[7],cube_num,model,center_box,0x6,data);
         }
 
         // XZ-Face
-        cube_num=
-    marching_cubes_render_algorithm::calculate_cube_num(v[5],v[5],v[7],v[7],
-                                                        v[5],v[5],v[7],v[7]);
         if(min_size_x != 0 && min_size_z != 0) {
+            cube_num=values_to_cube_num(v[5],v[5],v[7],v[7],v[5],v[5],v[7],v[7]);
             process_dual_cell_face(n[5],n[7],cube_num,model,center_box,0x5,data);
         }
     }

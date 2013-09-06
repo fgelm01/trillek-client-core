@@ -13,6 +13,7 @@ class dual_marching_cubes_render_algorithm
 public:
     dual_marching_cubes_render_algorithm();
     ~dual_marching_cubes_render_algorithm();
+    void process(voxel_model* node,graphics_service* service);
 private:
     void create_dual_cells(voxel_octree* n0,voxel_octree* n1,
                            voxel_octree* n2,voxel_octree* n3,
@@ -49,7 +50,6 @@ private:
                     voxel_data* data);
     void nodeProc(voxel_octree* n,std::shared_ptr<mesh_data> model,
                   voxel_data* data);
-    void process(voxel_model* node,graphics_service* service);
 };
 
 }

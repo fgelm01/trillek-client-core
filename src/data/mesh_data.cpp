@@ -23,7 +23,7 @@ void mesh_data::reserve(unsigned int new_size)
     vertex_buffer.reserve(new_size*3);
 }
 #include <SFML/OpenGL.hpp>
-void mesh_data::add_Polygon(vector3d<float> v1,
+void mesh_data::add_polygon(vector3d<float> v1,
                             vector3d<float> n1,
                             vector3d<float> v2,
                             vector3d<float> n2,

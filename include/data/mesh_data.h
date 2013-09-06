@@ -20,7 +20,7 @@ class mesh_data : public render_data
     public:
         mesh_data();
         virtual ~mesh_data();
-        void add_Polygon(vector3d<float> v1,
+        void add_polygon(vector3d<float> v1,
                          vector3d<float> n1,
                          vector3d<float> v2,
                          vector3d<float> n2,

@@ -10,7 +10,7 @@ bool voxel::is_standard() const {return standard;}
 bool voxel::is_opaque() const {return opaque;}
 voxel::~voxel() {}
 
-std::size_t voxel::value() const
+uint16_t voxel::value() const
 {
     if(is_standard()&&is_opaque())
         return 1;
