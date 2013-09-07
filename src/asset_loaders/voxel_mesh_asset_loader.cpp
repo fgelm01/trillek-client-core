@@ -248,17 +248,41 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
         max_xyz.x = std::max(max_xyz.x, max_int.x);
         max_xyz.y = std::max(max_xyz.y, max_int.y);
         max_xyz.z = std::max(max_xyz.z, max_int.z);
-        for(int_vector3d::value_type z = min_int.z;
-                z != max_int.z; ++z) {
-            for(int_vector3d::value_type y = min_int.y;
+        //old way - stored duplicates of many triangles
+//        for(int_vector3d::value_type z = min_int.z;
+//                z != max_int.z; ++z) {
+//            for(int_vector3d::value_type y = min_int.y;
+//                    y != max_int.y; ++y) {
+//                for(int_vector3d::value_type x = min_int.x;
+//                        x != max_int.x; ++x) {
+//                    xyb[int_vector2d(x,y)].push_back(std::ref(arg));
+//                    yzb[int_vector2d(y,z)].push_back(std::ref(arg));
+//                    zxb[int_vector2d(z,x)].push_back(std::ref(arg));
+//                    ++ret;
+//                }
+//            }
+//        }
+        //old way filled the volume
+        //new way fills the surface of the cube
+        for(int_vector3d::value_type x = min_int.x; 
+                x != max_int.x; ++x) {
+            for(int_vector3d::value_type y = min_int.y; 
                     y != max_int.y; ++y) {
-                for(int_vector3d::value_type x = min_int.x;
-                        x != max_int.x; ++x) {
-                    xyb[int_vector2d(x,y)].push_back(std::ref(arg));
-                    yzb[int_vector2d(y,z)].push_back(std::ref(arg));
-                    zxb[int_vector2d(z,x)].push_back(std::ref(arg));
-                    ++ret;
-                }
+                xyb[int_vector2d(x,y)].push_back(std::ref(arg));
+            }
+        }
+        for(int_vector3d::value_type y = min_int.y; 
+                y != max_int.y; ++y) {
+            for(int_vector3d::value_type z = min_int.z; 
+                    z != max_int.z; ++z) {
+                yzb[int_vector2d(y, z)].push_back(std::ref(arg));
+            }
+        }
+        for(int_vector3d::value_type z = min_int.z; 
+                z != max_int.z; ++z) {
+            for(int_vector3d::value_type x = min_int.x; 
+                    x != max_int.x; ++x) {
+                zxb[int_vector2d(z, x)].push_back(std::ref(arg));
             }
         }
         return ret;
