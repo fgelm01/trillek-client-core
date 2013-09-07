@@ -138,24 +138,15 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                                              std::shared_ptr<mesh_data> model,
                                                              voxel_data* data)
 {
-    /*
-        The rest of this algorithm is currently using the ordering
-        x -> z -> y
-        while this function and the rest of the program uses:
-        x -> y -> z
-        this is being "fixed" here, until the rest of the algorithm can be
-        altered to comply with the standard used in the rest of the program
-    */
-
     std::array<voxel,8> v = {{n0?n0->get_voxel():voxel(),
                              n1?n1->get_voxel():voxel(),
-                             n4?n4->get_voxel():voxel(),
-                             n5?n5->get_voxel():voxel(),
                              n2?n2->get_voxel():voxel(),
                              n3?n3->get_voxel():voxel(),
+                             n4?n4->get_voxel():voxel(),
+                             n5?n5->get_voxel():voxel(),
                              n6?n6->get_voxel():voxel(),
                              n7?n7->get_voxel():voxel()}};
-    std::array<voxel_octree*,8> n={{n0,n1,n4,n5,n2,n3,n6,n7}};
+    std::array<voxel_octree*,8> n={{n0,n1,n2,n3,n4,n5,n6,n7}};
     // First the cube_num is calculated, since we can skip the entire rest of
     // this function if the cube is entirely full(255) or empty(0)
     std::size_t cube_num= values_to_cube_num(v[0],v[1],v[2],v[3],
@@ -270,10 +261,10 @@ void dual_marching_cubes_render_algorithm::vertProc(voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(1,1,1):n0;
         voxel_octree* c1 = n1->has_children() ? n1->get_child(0,1,1):n1;
-        voxel_octree* c2 = n2->has_children() ? n2->get_child(1,1,0):n2;
-        voxel_octree* c3 = n3->has_children() ? n3->get_child(0,1,0):n3;
-        voxel_octree* c4 = n4->has_children() ? n4->get_child(1,0,1):n4;
-        voxel_octree* c5 = n5->has_children() ? n5->get_child(0,0,1):n5;
+        voxel_octree* c2 = n2->has_children() ? n2->get_child(1,0,1):n2;
+        voxel_octree* c3 = n3->has_children() ? n3->get_child(0,0,1):n3;
+        voxel_octree* c4 = n4->has_children() ? n4->get_child(1,1,0):n4;
+        voxel_octree* c5 = n5->has_children() ? n5->get_child(0,1,0):n5;
         voxel_octree* c6 = n6->has_children() ? n6->get_child(1,0,0):n6;
         voxel_octree* c7 = n7->has_children() ? n7->get_child(0,0,0):n7;
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
@@ -295,10 +286,10 @@ void dual_marching_cubes_render_algorithm::edgeProcX( voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(0,1,1):n0;
         voxel_octree* c1 = n0->has_children() ? n0->get_child(1,1,1):n0;
-        voxel_octree* c2 = n1->has_children() ? n1->get_child(0,1,0):n1;
-        voxel_octree* c3 = n1->has_children() ? n1->get_child(1,1,0):n1;
-        voxel_octree* c4 = n2->has_children() ? n2->get_child(0,0,1):n2;
-        voxel_octree* c5 = n2->has_children() ? n2->get_child(1,0,1):n2;
+        voxel_octree* c2 = n1->has_children() ? n1->get_child(0,0,1):n1;
+        voxel_octree* c3 = n1->has_children() ? n1->get_child(1,0,1):n1;
+        voxel_octree* c4 = n2->has_children() ? n2->get_child(0,1,0):n2;
+        voxel_octree* c5 = n2->has_children() ? n2->get_child(1,1,0):n2;
         voxel_octree* c6 = n3->has_children() ? n3->get_child(0,0,0):n3;
         voxel_octree* c7 = n3->has_children() ? n3->get_child(1,0,0):n3;
 
@@ -321,15 +312,15 @@ void dual_marching_cubes_render_algorithm::edgeProcY( voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(1,0,1):n0;
         voxel_octree* c1 = n1->has_children() ? n1->get_child(0,0,1):n1;
-        voxel_octree* c2 = n2->has_children() ? n2->get_child(1,0,0):n2;
-        voxel_octree* c3 = n3->has_children() ? n3->get_child(0,0,0):n3;
-        voxel_octree* c4 = n0->has_children() ? n0->get_child(1,1,1):n0;
-        voxel_octree* c5 = n1->has_children() ? n1->get_child(0,1,1):n1;
+        voxel_octree* c2 = n0->has_children() ? n0->get_child(1,1,1):n0;
+        voxel_octree* c3 = n1->has_children() ? n1->get_child(0,1,1):n1;
+        voxel_octree* c4 = n2->has_children() ? n2->get_child(1,0,0):n2;
+        voxel_octree* c5 = n3->has_children() ? n3->get_child(0,0,0):n3;
         voxel_octree* c6 = n2->has_children() ? n2->get_child(1,1,0):n2;
         voxel_octree* c7 = n3->has_children() ? n3->get_child(0,1,0):n3;
 
-        edgeProcY(c0,c1,c2,c3,model,data);
-        edgeProcY(c4,c5,c6,c7,model,data);
+        edgeProcY(c0,c1,c4,c5,model,data);
+        edgeProcY(c2,c3,c6,c7,model,data);
 
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
     }
@@ -347,15 +338,15 @@ void dual_marching_cubes_render_algorithm::edgeProcZ( voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(1,1,0):n0;
         voxel_octree* c1 = n1->has_children() ? n1->get_child(0,1,0):n1;
-        voxel_octree* c2 = n0->has_children() ? n0->get_child(1,1,1):n0;
-        voxel_octree* c3 = n1->has_children() ? n1->get_child(0,1,1):n1;
-        voxel_octree* c4 = n2->has_children() ? n2->get_child(1,0,0):n2;
-        voxel_octree* c5 = n3->has_children() ? n3->get_child(0,0,0):n3;
+        voxel_octree* c2 = n2->has_children() ? n2->get_child(1,0,0):n2;
+        voxel_octree* c3 = n3->has_children() ? n3->get_child(0,0,0):n3;
+        voxel_octree* c4 = n0->has_children() ? n0->get_child(1,1,1):n0;
+        voxel_octree* c5 = n1->has_children() ? n1->get_child(0,1,1):n1;
         voxel_octree* c6 = n2->has_children() ? n2->get_child(1,0,1):n2;
         voxel_octree* c7 = n3->has_children() ? n3->get_child(0,0,1):n3;
 
-        edgeProcZ(c0,c1,c4,c5,model,data);
-        edgeProcZ(c2,c3,c6,c7,model,data);
+        edgeProcZ(c0,c1,c2,c3,model,data);
+        edgeProcZ(c4,c5,c6,c7,model,data);
 
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
     }
@@ -370,23 +361,23 @@ void dual_marching_cubes_render_algorithm::faceProcXY(voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(0,0,1):n0;
         voxel_octree* c1 = n0->has_children() ? n0->get_child(1,0,1):n0;
-        voxel_octree* c2 = n1->has_children() ? n1->get_child(0,0,0):n1;
-        voxel_octree* c3 = n1->has_children() ? n1->get_child(1,0,0):n1;
-        voxel_octree* c4 = n0->has_children() ? n0->get_child(0,1,1):n0;
-        voxel_octree* c5 = n0->has_children() ? n0->get_child(1,1,1):n0;
+        voxel_octree* c2 = n0->has_children() ? n0->get_child(0,1,1):n0;
+        voxel_octree* c3 = n0->has_children() ? n0->get_child(1,1,1):n0;
+        voxel_octree* c4 = n1->has_children() ? n1->get_child(0,0,0):n1;
+        voxel_octree* c5 = n1->has_children() ? n1->get_child(1,0,0):n1;
         voxel_octree* c6 = n1->has_children() ? n1->get_child(0,1,0):n1;
         voxel_octree* c7 = n1->has_children() ? n1->get_child(1,1,0):n1;
 
-        faceProcXY(c0,c2,model,data);
-        faceProcXY(c1,c3,model,data);
-        faceProcXY(c4,c6,model,data);
-        faceProcXY(c5,c7,model,data);
+        faceProcXY(c0,c4,model,data);
+        faceProcXY(c1,c5,model,data);
+        faceProcXY(c2,c6,model,data);
+        faceProcXY(c3,c7,model,data);
 
         edgeProcX(c0,c2,c4,c6,model,data);
         edgeProcX(c1,c3,c5,c7,model,data);
 
-        edgeProcY(c0,c1,c2,c3,model,data);
-        edgeProcY(c4,c5,c6,c7,model,data);
+        edgeProcY(c0,c1,c4,c5,model,data);
+        edgeProcY(c2,c3,c6,c7,model,data);
 
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
     }
@@ -401,10 +392,10 @@ void dual_marching_cubes_render_algorithm::faceProcYZ(voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(1,0,0):n0;
         voxel_octree* c1 = n1->has_children() ? n1->get_child(0,0,0):n1;
-        voxel_octree* c2 = n0->has_children() ? n0->get_child(1,0,1):n0;
-        voxel_octree* c3 = n1->has_children() ? n1->get_child(0,0,1):n1;
-        voxel_octree* c4 = n0->has_children() ? n0->get_child(1,1,0):n0;
-        voxel_octree* c5 = n1->has_children() ? n1->get_child(0,1,0):n1;
+        voxel_octree* c2 = n0->has_children() ? n0->get_child(1,1,0):n0;
+        voxel_octree* c3 = n1->has_children() ? n1->get_child(0,1,0):n1;
+        voxel_octree* c4 = n0->has_children() ? n0->get_child(1,0,1):n0;
+        voxel_octree* c5 = n1->has_children() ? n1->get_child(0,0,1):n1;
         voxel_octree* c6 = n0->has_children() ? n0->get_child(1,1,1):n0;
         voxel_octree* c7 = n1->has_children() ? n1->get_child(0,1,1):n1;
 
@@ -413,11 +404,11 @@ void dual_marching_cubes_render_algorithm::faceProcYZ(voxel_octree* n0,
         faceProcYZ(c4,c5,model,data);
         faceProcYZ(c6,c7,model,data);
 
-        edgeProcY(c0,c1,c2,c3,model,data);
-        edgeProcY(c4,c5,c6,c7,model,data);
+        edgeProcY(c0,c1,c4,c5,model,data);
+        edgeProcY(c2,c3,c6,c7,model,data);
 
-        edgeProcZ(c0,c1,c4,c5,model,data);
-        edgeProcZ(c2,c3,c6,c7,model,data);
+        edgeProcZ(c0,c1,c2,c3,model,data);
+        edgeProcZ(c4,c5,c6,c7,model,data);
 
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
     }
@@ -432,23 +423,23 @@ void dual_marching_cubes_render_algorithm::faceProcXZ(voxel_octree* n0,
     {
         voxel_octree* c0 = n0->has_children() ? n0->get_child(0,1,0):n0;
         voxel_octree* c1 = n0->has_children() ? n0->get_child(1,1,0):n0;
-        voxel_octree* c2 = n0->has_children() ? n0->get_child(0,1,1):n0;
-        voxel_octree* c3 = n0->has_children() ? n0->get_child(1,1,1):n0;
-        voxel_octree* c4 = n1->has_children() ? n1->get_child(0,0,0):n1;
-        voxel_octree* c5 = n1->has_children() ? n1->get_child(1,0,0):n1;
+        voxel_octree* c2 = n1->has_children() ? n1->get_child(0,0,0):n1;
+        voxel_octree* c3 = n1->has_children() ? n1->get_child(1,0,0):n1;
+        voxel_octree* c4 = n0->has_children() ? n0->get_child(0,1,1):n0;
+        voxel_octree* c5 = n0->has_children() ? n0->get_child(1,1,1):n0;
         voxel_octree* c6 = n1->has_children() ? n1->get_child(0,0,1):n1;
         voxel_octree* c7 = n1->has_children() ? n1->get_child(1,0,1):n1;
 
-        faceProcXZ(c0,c4,model,data);
-        faceProcXZ(c1,c5,model,data);
-        faceProcXZ(c2,c6,model,data);
-        faceProcXZ(c3,c7,model,data);
+        faceProcXZ(c0,c2,model,data);
+        faceProcXZ(c1,c3,model,data);
+        faceProcXZ(c4,c6,model,data);
+        faceProcXZ(c5,c7,model,data);
 
         edgeProcX(c0,c2,c4,c6,model,data);
         edgeProcX(c1,c3,c5,c7,model,data);
 
-        edgeProcZ(c0,c1,c4,c5,model,data);
-        edgeProcZ(c2,c3,c6,c7,model,data);
+        edgeProcZ(c0,c1,c2,c3,model,data);
+        edgeProcZ(c4,c5,c6,c7,model,data);
 
         vertProc(c0,c1,c2,c3,c4,c5,c6,c7,model,data);
     }
@@ -479,10 +470,10 @@ void dual_marching_cubes_render_algorithm::_nodeProc(voxel_octree* n,
         faceProcXZ(n->get_child(0,0,1),n->get_child(0,1,1),model,data);
         faceProcXZ(n->get_child(1,0,1),n->get_child(1,1,1),model,data);
 
-        edgeProcX(n->get_child(0,0,0),n->get_child(0,0,1),
-                  n->get_child(0,1,0),n->get_child(0,1,1),model,data);
-        edgeProcX(n->get_child(1,0,0),n->get_child(1,0,1),
-                  n->get_child(1,1,0),n->get_child(1,1,1),model,data);
+        edgeProcX(n->get_child(0,0,0),n->get_child(0,1,0),
+                  n->get_child(0,0,1),n->get_child(0,1,1),model,data);
+        edgeProcX(n->get_child(1,0,0),n->get_child(1,1,0),
+                  n->get_child(1,0,1),n->get_child(1,1,1),model,data);
 
         edgeProcY(n->get_child(0,0,0),n->get_child(1,0,0),
                   n->get_child(0,0,1),n->get_child(1,0,1),model,data);
@@ -495,8 +486,8 @@ void dual_marching_cubes_render_algorithm::_nodeProc(voxel_octree* n,
                   n->get_child(0,1,1),n->get_child(1,1,1),model,data);
 
         vertProc(n->get_child(0,0,0),n->get_child(1,0,0),
-                 n->get_child(0,0,1),n->get_child(1,0,1),
                  n->get_child(0,1,0),n->get_child(1,1,0),
+                 n->get_child(0,0,1),n->get_child(1,0,1),
                  n->get_child(0,1,1),n->get_child(1,1,1),model,data);
     }
 }
