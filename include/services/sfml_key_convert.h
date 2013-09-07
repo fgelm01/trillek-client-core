@@ -117,7 +117,7 @@ namespace trillek
                 return keyboard::right_control;
             break;
             case sf::Keyboard::RShift:
-                return keyboard::right_escape;
+                return keyboard::right_shift;
             break;
             case sf::Keyboard::RAlt:
                 return keyboard::right_alt;

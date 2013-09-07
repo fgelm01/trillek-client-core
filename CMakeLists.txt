@@ -39,7 +39,7 @@ if(src_list)
 		${GLEW_LIBS}
 	)
 	set_target_properties(trillek-client-core PROPERTIES LINKER_LANGUAGE CXX)
-    add_definitions("-std=c++11 -Wall -Wextra -O2")
+    add_definitions("-std=c++11 -Wall -Wextra -O2 -fopenmp")
 	if(WIN32)
 		target_link_libraries(trillek-client-core 
             "sfml-graphics" 
@@ -65,6 +65,9 @@ if(src_list)
             "jpeg" 
             "assimp")
 	endif()
+    set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
+    set(CMAKE_SHARED_LINKER_FLAGS "-fopenmp")
+    set(CMAKE_MODULE_LINKER_FLAGS "-fopenmp")
 else(src_list)
 	message(WARNING "No Source or Header files found")
 endif()

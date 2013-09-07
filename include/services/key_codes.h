@@ -17,7 +17,7 @@ namespace keyboard
         left_alt,
         left_system,
         right_control,
-        right_escape,
+        right_shift,
         right_alt,
         right_system,
         menu,

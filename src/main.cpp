@@ -10,9 +10,11 @@
 #include "asset_loaders/basic_voxel_asset_loader.h"
 #include "asset_loaders/voxel_mesh_asset_loader.h"
 #include "data/voxel_array.h"
+#include <omp.h>
 
 int main(int argc, char **argv)
 {
+    omp_set_dynamic(1);
     trillek::client client;
 
     // Some test-code to load/create something to test the rendering with

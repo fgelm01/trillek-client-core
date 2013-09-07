@@ -16,6 +16,7 @@
 #include <functional>
 #include <algorithm>
 #include <random>
+#include <omp.h>
 
 namespace trillek {
 
@@ -198,6 +199,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             int_vector3d::value_type>::min();
     static const auto MAX_INT_VAL = std::numeric_limits<
             int_vector3d::value_type>::max();
+    static const std::size_t magnify = 4;
     typedef std::vector<float> crossing_vector;
     typedef std::vector<int_vector3d::value_type> discrete_crossing_vector;
     //bucket sort triangles along each plane
@@ -278,10 +280,11 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             "\n\t" << yzb.size() << 
             "\n\t" << zxb.size() << std::endl;
     voxel_data::size_vector3d size_extent = (max_xyz - min_xyz);
-    voxel_array_alternate xyvox, yzvox, zxvox;
-    xyvox.reserve_space(size_extent);
-    yzvox.reserve_space(size_extent);
-    zxvox.reserve_space(size_extent);
+    voxel_octree xyvox, yzvox, zxvox;
+    const voxel_octree::size_vector3d ret_size = size_extent * magnify;
+    xyvox.reserve_space(ret_size);
+    yzvox.reserve_space(ret_size);
+    zxvox.reserve_space(ret_size);
     typedef bool (* const cast_func)(const float_triangle3d&, 
             const float_vector2d&, float&);
     /**
@@ -336,21 +339,30 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     };
     auto multicast_ray = [&cast_ray, &discretize_cast](
             const bucket_map::value_type& vt, 
+            const int_vector2d& offset, 
+            const std::size_t scale,
             cast_func ray_intersection, 
             int_vector3d::value_type min_val)->discrete_crossing_vector {
-        static const std::array<float_vector2d, 4> offsets = {{
-                float_vector2d(0.20, 0.20), 
-                float_vector2d(0.80, 0.20),
-                float_vector2d(0.80, 0.80), 
-                float_vector2d(0.20, 0.80)}};
+        auto offset_scale = [&offset, &scale](
+                const float_vector2d& arg)->float_vector2d {
+            return (offset + arg) / scale;
+        };
+        const std::array<float_vector2d, 4> offsets = {{
+                offset_scale(float_vector2d(0.20, 0.20)), 
+                offset_scale(float_vector2d(0.80, 0.20)),
+                offset_scale(float_vector2d(0.20, 0.80)), 
+                offset_scale(float_vector2d(0.80, 0.80))}};
         std::array<discrete_crossing_vector, 4> crossings;
         std::size_t current_crossing_index = 0;
         for(const float_vector2d& offset : offsets) {
             crossing_vector cv = cast_ray(vt, ray_intersection, offset);
+            for(float& c : cv) {
+                c *= scale;
+            }
             discrete_crossing_vector dcv1, dcv2;
-            dcv1 = discretize_cast(cv, min_val);
+            dcv1 = discretize_cast(cv, min_val * scale);
             std::reverse(cv.begin(), cv.end());
-            dcv2 = discretize_cast(cv, min_val);
+            dcv2 = discretize_cast(cv, min_val * scale);
             std::sort(dcv1.begin(), dcv1.end());
             std::sort(dcv2.begin(), dcv2.end());
             std::set_intersection(dcv1.begin(), dcv1.end(), 
@@ -381,51 +393,78 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
         }
         return ret;
     };
-    static const float_vector2d xy_center(0.5, 0.5);
-    std::cerr << "Voxelizing x-y plane... ";
-    for(const bucket_map::value_type& xyvt : xyb) {
-        for(int_vector3d::value_type cz : 
-                multicast_ray(xyvt, &z_ray_intersection, min_xyz.z)) {
-            xyvox.set_voxel(
-                    xyvt.first.x - min_xyz.x, 
-                    xyvt.first.y - min_xyz.y, 
-                    cz, 
-                    voxel(true, true));
+    std::vector<int_vector2d> offsets(magnify * magnify);
+    const std::size_t offset_scale = magnify;
+    for(std::size_t i = 0; i != offsets.size(); ++i) {
+        offsets[i] = int_vector2d(i % magnify, 
+                i / magnify);
+    }
+#pragma omp parallel sections default(shared)
+    {
+#pragma omp section
+        {
+            std::cerr << "Voxelizing x-y plane... ";
+            for(const bucket_map::value_type& xyvt : xyb) {
+                for(const float_vector2d& offset : offsets) {
+                    const std::size_t voxel_x = offset.x + 
+                            (xyvt.first.x - min_xyz.x) * offset_scale;
+                    const std::size_t voxel_y = offset.y + 
+                            (xyvt.first.y - min_xyz.y) * offset_scale;
+                    for(int_vector3d::value_type cz : 
+                            multicast_ray(xyvt, offset, offset_scale, 
+                            &z_ray_intersection, min_xyz.z)) {
+                        xyvox.set_voxel(voxel_x, voxel_y, cz, voxel(true, true));
+                    }
+                }
+            }
+            std::cerr << "DONE!" << std::endl;
+        }
+#pragma omp section
+        {
+            std::cerr << "Voxelizing y-z plane... ";
+            for(const bucket_map::value_type& yzvt : yzb) {
+                for(const float_vector2d& offset : offsets) {
+                    const std::size_t voxel_y = offset.x + 
+                            (yzvt.first.x - min_xyz.y) * offset_scale;
+                    const std::size_t voxel_z = offset.y + 
+                            (yzvt.first.y - min_xyz.z) * offset_scale;
+                    for(int_vector3d::value_type cx : 
+                            multicast_ray(yzvt, offset, offset_scale, 
+                            &x_ray_intersection, min_xyz.x)) {
+                        yzvox.set_voxel(cx, voxel_y,voxel_z, voxel(true, true));
+                    }
+                }
+            }
+            std::cerr << "DONE!" << std::endl;
+        }
+#pragma omp section
+        {
+            std::cerr << "Voxelizing z-x plane... ";
+            for(const bucket_map::value_type& zxvt : zxb) {
+                for(const float_vector2d& offset : offsets) {
+                    const std::size_t voxel_x = offset.y + 
+                            (zxvt.first.y - min_xyz.x) * offset_scale;
+                    const std::size_t voxel_z = offset.x + 
+                            (zxvt.first.x - min_xyz.z) * offset_scale;
+                    for(int_vector3d::value_type cy : 
+                            multicast_ray(zxvt, offset, offset_scale, 
+                            &y_ray_intersection, min_xyz.y)) {
+                        zxvox.set_voxel(voxel_x, cy, voxel_z, voxel(true, true));
+                    }
+                }
+            }
+            std::cerr << "DONE!" << std::endl;
         }
     }
-    std::cerr << "DONE!" << std::endl;
-    std::cerr << "Voxelizing y-z plane... ";
-    for(const bucket_map::value_type& yzvt : yzb) {
-        for(int_vector3d::value_type cx : 
-                multicast_ray(yzvt, &x_ray_intersection, min_xyz.x)) {
-            yzvox.set_voxel(
-                    cx, 
-                    yzvt.first.x - min_xyz.y,
-                    yzvt.first.y - min_xyz.z, 
-                    voxel(true, true));
-        }
-    }
-    std::cerr << "DONE!" << std::endl;
-    std::cerr << "Voxelizing z-x plane... ";
-    for(const bucket_map::value_type& zxvt : zxb) {
-        for(int_vector3d::value_type cy : 
-                multicast_ray(zxvt, &y_ray_intersection, min_xyz.y)) {
-            zxvox.set_voxel(
-                    zxvt.first.y - min_xyz.x, 
-                    cy,
-                    zxvt.first.x - min_xyz.z, 
-                    voxel(true, true));
-        }
-    }
-    std::cerr << "DONE!" << std::endl;
+    //end parallel part
     std::size_t xy_count = 0;
     std::size_t yz_count = 0;
     std::size_t zx_count = 0;
     voxel_octree ret;
-    ret.reserve_space(size_extent);
-    for(std::size_t z = 0; z < size_extent.z; ++z) {
-        for(std::size_t y = 0; y < size_extent.y; ++y) {
-            for(std::size_t x = 0; x < size_extent.x; ++x) {
+    ret.reserve_space(ret_size);
+    for(std::size_t z = 0; z < ret_size.z; ++z) {
+        for(std::size_t y = 0; y < ret_size.y; ++y) {
+            for(std::size_t x = 0; x < ret_size.x; ++x) {
                 int count = 0;
                 if(xyvox.get_voxel(x,y,z).is_opaque()) {
                     ++count;
@@ -452,7 +491,8 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     std::cerr << "Final result has filled volume " << ret.get_opaque_volume()
             << std::endl;
     std::cerr << "Final result has nodes " << ret.get_num_nodes() << std::endl;
-    return ret;
+    //return ret;
+    return xyvox;
 }
 
 }

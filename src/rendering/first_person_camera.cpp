@@ -40,6 +40,10 @@ void first_person_camera::render(graphics_service* service)
     input_service* i_s = service->get_client()->get_input_service();
     float conv=M_PI/180.0f;
     float speed=0.0125f;
+    if(i_s->is_key_pressed(keyboard::left_shift) || 
+            i_s->is_key_pressed(keyboard::right_shift)) {
+        speed *= 4;
+    }
     if(i_s->is_key_pressed((keyboard::key_code)'w'))
     {
         pos.x+=sin(rot.y*conv)*cos(rot.x*conv)*speed;

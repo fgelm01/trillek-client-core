@@ -27,6 +27,7 @@ class vector2d{
 public:
     typedef T value_type;
     value_type x,y;
+    vector2d() : x(0), y(0) {}
     template <typename U>
     vector2d(U&& x, U&& y) : x(std::forward<U>(x)), y(std::forward<U>(y)) {}
     template <typename U>
@@ -124,9 +125,19 @@ vector2d<decltype(std::declval<T>() * std::declval<U>())> operator *(
     return make_vector2d(lhs * rhs.x, lhs * rhs.y);
 }
 template <typename T, typename U>
+vector2d<decltype(std::declval<T>() * std::declval<U>())> operator *(
+        const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return make_vector2d(lhs.x * rhs.x, lhs.y * rhs.y);
+}
+template <typename T, typename U>
 vector2d<decltype(std::declval<T>() / std::declval<U>())> operator /(
         const vector2d<T>& lhs, const U& rhs) {
     return make_vector2d(lhs.x / rhs, lhs.y / rhs);
+}
+template <typename T, typename U>
+vector2d<decltype(std::declval<T>() / std::declval<U>())> operator /(
+        const vector2d<T>& lhs, const vector2d<U>& rhs) {
+    return make_vector2d(lhs.x / rhs.x, lhs.y / rhs.y);
 }
 template <typename T>
 vector3d<T> operator -(const vector3d<T>& rhs) {
