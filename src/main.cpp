@@ -49,14 +49,20 @@ int main(int argc, char **argv)
         {
             std::cerr << "Couldn't load " << filename <<
                     ", creating standard room" << std::endl;
+            float offset=1;
             for(std::size_t x=0;x<size;x++) {
                 for(std::size_t z=0;z<size;z++) {
                     for(std::size_t y=0;y<size;y++) {
-                            if(x>0 && x < size-1 &&
-                               y>0 && y < size-1 &&
-                               z>0 && z < size/2)
+                            if(x>offset-1 && x < size-offset &&
+                               y>offset-1 && y < size-offset &&
+                               z>offset-1 && z < size-offset)
                             {
-                                v_m->set_voxel(x,y,z,trillek::voxel(true,true));
+                                if( x<=offset||x >=size-offset-1||
+                                    y<=offset||y >=size-offset-1||
+                                    z<=offset||z >=size-offset-1)
+                                {
+                                    v_m->set_voxel(x,y,z,trillek::voxel(true,true));
+                                }
                             }
                     }
                 }
