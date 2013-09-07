@@ -163,7 +163,7 @@ voxel_octree::size_vector3d voxel_octree::compute_child_relative_coordinates(
 void voxel_octree::split_children() {
     assert(!_has_children);
     assert(_size_exp > 0);
-    for(int i=0;i<_children.size();++i) {
+    for(std::size_t i=0 ; i<_children.size(); ++i) {
         _children[i] = (make_unique<voxel_octree>(voxel_octree(
                 _size_exp - 1, _data,_offset+get_child_offset_by_index(i))));
     }
@@ -226,7 +226,7 @@ voxel_octree* voxel_octree::get_child(unsigned char num)
 
 voxel_octree* voxel_octree::get_child(std::size_t x, std::size_t y, std::size_t z)
 {
-    get_child(compute_child_index(x,y,z,1));
+    return get_child(compute_child_index(x,y,z,1));
 }
 
 }
