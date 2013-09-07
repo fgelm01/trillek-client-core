@@ -28,13 +28,21 @@ void opengl_graphics_service::prepare_rendering()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    const float amb = 2.0;
-    const float LightAmbient[][4]  = {  { amb, amb, amb, 1.0f },
-                                        { amb, amb, amb, 1.0f }};
-    glLightfv(GL_LIGHT0, GL_AMBIENT, LightAmbient[0]);
+    //glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
+    const float ambi = 0.05f;
+    const float spec = 0.95f;
+    const float LightData[][4]  = {  { ambi, ambi, ambi, 1.0f },
+                                     { spec, spec, spec, 1.0f }};
+    const float LightMax[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, LightMax);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, LightMax);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, LightData[0]);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, LightData[1]);
+    glMaterialf(GL_FRONT, GL_SHININESS, 2.f);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
     glLoadIdentity();
 }
 

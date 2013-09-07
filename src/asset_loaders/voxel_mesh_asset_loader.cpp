@@ -439,7 +439,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                     ++count;
                     ++zx_count;
                 }
-                if(count == 3) {
+                if(count != 0) {
                     ret.set_voxel(x, y, z, voxel(true, true));
                 }
             }
