@@ -11,7 +11,7 @@ namespace trillek
 voxel_octree::voxel_octree() : _size_exp(0), _has_children(false) {}
 voxel_octree::voxel_octree(const voxel_octree& other)
         : _size_exp(other._size_exp), _data(other._data),
-        _has_children(other._has_children) {
+        _has_children(other._has_children),_offset(other._offset) {
     if(_has_children) {
         for(std::size_t i = 0; i != _children.size(); ++i) {
             _children[i] = make_unique<voxel_octree>(*other._children[i]);
@@ -20,15 +20,17 @@ voxel_octree::voxel_octree(const voxel_octree& other)
 }
 voxel_octree::voxel_octree(voxel_octree&& other)
         : _size_exp(other._size_exp), _data(std::move(other._data)),
-        _has_children(other._has_children) {
+        _has_children(other._has_children),_offset(other._offset) {
     if(_has_children) {
         for(std::size_t i = 0; i != _children.size(); ++i) {
             _children[i] = std::move(other._children[i]);
         }
     }
 }
-voxel_octree::voxel_octree(std::size_t size_exp, const voxel& data)
-        : _size_exp(size_exp), _data(data), _has_children(false) {}
+voxel_octree::voxel_octree(std::size_t size_exp, const voxel& data,
+                           vector3d<float> offset)
+        : _size_exp(size_exp), _data(data), _has_children(false),
+        _offset(offset){}
 voxel_octree::~voxel_octree() {}
 
 voxel_octree::size_vector3d voxel_octree::get_size() const {
@@ -58,6 +60,12 @@ std::size_t voxel_octree::get_opaque_volume() const {
         }
     }
     return ret;
+}
+
+const voxel& voxel_octree::get_voxel() const
+{
+    assert(!_has_children);
+    return _data;
 }
 const voxel& voxel_octree::get_voxel(std::size_t x,
                                      std::size_t y,
@@ -106,24 +114,47 @@ void voxel_octree::reserve_space(std::size_t x, std::size_t y, std::size_t z) {
     assert(!_has_children);
     const std::size_t max_size = std::max(std::max(x, y), z);
     std::cerr << "Max size is " << max_size << std::endl;
-    for(_size_exp = 0; static_cast<std::size_t>(1 << _size_exp) <= max_size; 
+    for(_size_exp = 0; static_cast<std::size_t>(1 << _size_exp) < max_size;
             ++_size_exp);
     std::cerr << "Exponent is " << _size_exp << std::endl;
+    float _size=get_size().x;
+    this->_offset=vector3d<float>(_size/2.0f,_size/2.0f,_size/2.0f);
 }
 
 void voxel_octree::reserve_space(const size_vector3d& xyz) {
     reserve_space(xyz.x, xyz.y, xyz.z);
 }
 
+vector3d<float> voxel_octree::get_child_offset_by_index(unsigned char num)
+{
+    size_vector3d _size=this->get_size();
+    vector3d<float> corner(-(float)_size.x/4.0f,
+                           -(float)_size.y/4.0f,
+                           -(float)_size.z/4.0f);
+    if(num&0x1) corner.x*=-1;
+    if(num&0x2) corner.y*=-1;
+    if(num&0x4) corner.z*=-1;
+
+    return corner;
+}
+
 std::size_t voxel_octree::compute_child_index(std::size_t x,
                                               std::size_t y,
                                               std::size_t z) const {
-    const std::size_t size_flag = (1 << (_size_exp -1));
+    return compute_child_index(x,y,z,_size_exp);
+}
+
+std::size_t voxel_octree::compute_child_index(std::size_t x,
+                                              std::size_t y,
+                                              std::size_t z,
+                                              std::size_t generation) {
+    const std::size_t size_flag = (1 << (generation -1));
     const std::size_t xbit = (x & size_flag) != 0;
     const std::size_t ybit = (y & size_flag) != 0;
     const std::size_t zbit = (z & size_flag) != 0;
     return (zbit << 2) | (ybit << 1) | (xbit);
 }
+
 voxel_octree::size_vector3d voxel_octree::compute_child_relative_coordinates(
     std::size_t x, std::size_t y, std::size_t z) const {
     const std::size_t size_flag = (1 << (_size_exp -1));
@@ -132,9 +163,9 @@ voxel_octree::size_vector3d voxel_octree::compute_child_relative_coordinates(
 void voxel_octree::split_children() {
     assert(!_has_children);
     assert(_size_exp > 0);
-    for(voxel_octree_ptr& child : _children) {
-        child = (make_unique<voxel_octree>(voxel_octree(
-                _size_exp - 1, _data)));
+    for(int i=0;i<_children.size();++i) {
+        _children[i] = (make_unique<voxel_octree>(voxel_octree(
+                _size_exp - 1, _data,_offset+get_child_offset_by_index(i))));
     }
     _has_children = true;
 }
@@ -166,7 +197,7 @@ voxel_octree* voxel_octree::convert(voxel_data* data) {
     // If it already is an octree, just give it back
     if(data->get_type()==dt_voxel_octree)
         return (voxel_octree*)data;
-    
+
     voxel_octree* retval = new voxel_octree();
     std::cerr << "size of retval is " << retval->get_size().x << std::endl;
     retval->reserve_space(data->get_size());
@@ -185,6 +216,17 @@ voxel_octree* voxel_octree::convert(voxel_data* data) {
         }
     }
     return retval;
+}
+
+voxel_octree* voxel_octree::get_child(unsigned char num)
+{
+    assert(_has_children);
+    return _children[num].get();
+}
+
+voxel_octree* voxel_octree::get_child(std::size_t x, std::size_t y, std::size_t z)
+{
+    get_child(compute_child_index(x,y,z,1));
 }
 
 }

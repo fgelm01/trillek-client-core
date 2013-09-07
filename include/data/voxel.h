@@ -2,6 +2,7 @@
 #define TRILLEK_VOXEL_H
 
 #include <cstddef>
+#include <stdint.h>
 
 namespace trillek
 {
@@ -14,6 +15,7 @@ public:
 
     bool is_standard() const;
     bool is_opaque() const;
+    uint16_t value() const;
     /**
      * Average up the voxels in this range
      * @param begin

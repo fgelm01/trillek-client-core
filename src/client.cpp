@@ -7,6 +7,7 @@
 #include "services/sfml_window_service.h"
 #include <SFML/OpenGL.hpp>
 #include "services/cust_settings_service.h"
+#include "rendering/dual_marching_cubes_render_algorithm.h"
 #include "rendering/marching_cubes_render_algorithm.h"
 #include "rendering/first_person_camera.h"
 
