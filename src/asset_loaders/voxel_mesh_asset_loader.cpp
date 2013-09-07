@@ -182,17 +182,9 @@ int y_compute_winding(const float_triangle2d& triangle,
 }
 bool consistent_point_in_triangle(const float_triangle2d& triangle, 
         const float_vector2d& xy) {
-    std::normal_distribution<> norm(0.0, 0.01);
-    float_vector2d cxy = xy;
-    bool x = false;
-    bool y = false;
-    do {
-        x = x_compute_winding(triangle, cxy) != 0;
-        y = y_compute_winding(triangle, cxy) != 0;
-        //monte carlo
-        cxy += make_vector2d(norm(trillek_rand), norm(trillek_rand));
-    } while(x != y);
-    return x && y;
+    const bool x = x_compute_winding(triangle, xy) != 0;
+    const bool y = y_compute_winding(triangle, xy) != 0;
+    return x || y;
 }
 voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     //float or double or similar
@@ -207,6 +199,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     static const auto MAX_INT_VAL = std::numeric_limits<
             int_vector3d::value_type>::max();
     typedef std::vector<float> crossing_vector;
+    typedef std::vector<int_vector3d::value_type> discrete_crossing_vector;
     //bucket sort triangles along each plane
     bucket_map xyb, yzb, zxb;
     //integral extents
@@ -240,7 +233,8 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                 std::ceil(max_extents.x),
                 std::ceil(max_extents.y),
                 std::ceil(max_extents.z));
-        max_int += int_vector3d(1,1,1);
+        max_int += int_vector3d(2,2,2);
+        min_int += int_vector3d(-1, -1, -1);
         //update overall extents
         min_xyz.x = std::min(min_xyz.x, min_int.x);
         min_xyz.y = std::min(min_xyz.y, min_int.y);
@@ -248,22 +242,6 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
         max_xyz.x = std::max(max_xyz.x, max_int.x);
         max_xyz.y = std::max(max_xyz.y, max_int.y);
         max_xyz.z = std::max(max_xyz.z, max_int.z);
-        //old way - stored duplicates of many triangles
-//        for(int_vector3d::value_type z = min_int.z;
-//                z != max_int.z; ++z) {
-//            for(int_vector3d::value_type y = min_int.y;
-//                    y != max_int.y; ++y) {
-//                for(int_vector3d::value_type x = min_int.x;
-//                        x != max_int.x; ++x) {
-//                    xyb[int_vector2d(x,y)].push_back(std::ref(arg));
-//                    yzb[int_vector2d(y,z)].push_back(std::ref(arg));
-//                    zxb[int_vector2d(z,x)].push_back(std::ref(arg));
-//                    ++ret;
-//                }
-//            }
-//        }
-        //old way filled the volume
-        //new way fills the surface of the cube
         for(int_vector3d::value_type x = min_int.x; 
                 x != max_int.x; ++x) {
             for(int_vector3d::value_type y = min_int.y; 
@@ -304,79 +282,139 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     xyvox.reserve_space(size_extent);
     yzvox.reserve_space(size_extent);
     zxvox.reserve_space(size_extent);
+    typedef bool (* const cast_func)(const float_triangle3d&, 
+            const float_vector2d&, float&);
+    /**
+     * @brief Cast a ray through these triangles at this position
+     * @param vt an element of the bucket map we examine
+     * @param ray_intersection the ray casting function - x, y, or z variant
+     * @param offset_from_vt if we want to offset from the integer coords
+     * @return sorted vector of intersection points along the appropriate
+     * axis
+     */
+    auto cast_ray = [](const bucket_map::value_type& vt, 
+            cast_func ray_intersection, 
+            const float_vector2d& offset_from_vt)->crossing_vector {
+        crossing_vector ret;
+        const float_vector2d cast_at = vt.first + offset_from_vt;
+        for(const float_triangle3d& triangle : vt.second) {
+            float crossing;
+            if(ray_intersection(triangle, cast_at, crossing)) {
+                ret.push_back(crossing);
+            }
+        }
+        std::sort(ret.begin(), ret.end());
+        return ret;
+    };
+    /**
+     * @brief Transform model space casts into voxel space coordinates
+     * @param arg a sequence of model space intersections
+     * @param min_val the voxel origin for that axis in model space
+     * @return a sequence of transformed discretized voxel coordinates
+     */
+    auto discretize_cast = [](const crossing_vector& arg, 
+            int_vector3d::value_type min_val)->discrete_crossing_vector {
+        discrete_crossing_vector ret;
+        for(std::size_t i = 0; i + 1 < arg.size(); i += 2) {
+            if(arg[i + 1] > arg[i]) {
+                for(float coord = arg[i]; coord < arg[i + 1]; 
+                        ++coord) {
+                    int_vector3d::value_type coord_i = 
+                            static_cast<int_vector3d::value_type>(coord + 0.5);
+                    ret.push_back(coord_i - min_val);
+                }
+            } else {
+                for(float coord = arg[i + 1]; coord < arg[i]; 
+                        ++coord) {
+                    int_vector3d::value_type coord_i = 
+                            static_cast<int_vector3d::value_type>(coord + 0.5);
+                    ret.push_back(coord_i - min_val);
+                }
+            }
+        }
+        return ret;
+    };
+    auto multicast_ray = [&cast_ray, &discretize_cast](
+            const bucket_map::value_type& vt, 
+            cast_func ray_intersection, 
+            int_vector3d::value_type min_val)->discrete_crossing_vector {
+        static const std::array<float_vector2d, 4> offsets = {{
+                float_vector2d(0.20, 0.20), 
+                float_vector2d(0.80, 0.20),
+                float_vector2d(0.80, 0.80), 
+                float_vector2d(0.20, 0.80)}};
+        std::array<discrete_crossing_vector, 4> crossings;
+        std::size_t current_crossing_index = 0;
+        for(const float_vector2d& offset : offsets) {
+            crossing_vector cv = cast_ray(vt, ray_intersection, offset);
+            discrete_crossing_vector dcv1, dcv2;
+            dcv1 = discretize_cast(cv, min_val);
+            std::reverse(cv.begin(), cv.end());
+            dcv2 = discretize_cast(cv, min_val);
+            std::sort(dcv1.begin(), dcv1.end());
+            std::sort(dcv2.begin(), dcv2.end());
+            std::set_intersection(dcv1.begin(), dcv1.end(), 
+                    dcv2.begin(), dcv2.end(), 
+                    std::back_inserter(crossings[current_crossing_index]));
+            ++current_crossing_index;
+        }
+        discrete_crossing_vector merge1, merge2, merge3;
+        std::merge(crossings[0].begin(), crossings[0].end(), 
+                crossings[1].begin(), crossings[1].end(), 
+                std::back_inserter(merge1));
+        std::merge(crossings[2].begin(), crossings[2].end(), 
+                crossings[3].begin(), crossings[3].end(), 
+                std::back_inserter(merge2));
+        std::merge(merge1.begin(), merge1.end(), 
+                merge2.begin(), merge2.end(), 
+                std::back_inserter(merge3));
+        discrete_crossing_vector ret;
+        for(discrete_crossing_vector::const_iterator first = merge3.begin(); 
+                first != merge3.end(); ++first) {
+            discrete_crossing_vector::const_iterator last = first;
+            for(; last != merge3.end() && *last == *first; ++last);
+            const ptrdiff_t count = last - first;
+            if(count > 1) {
+                ret.push_back(*first);
+            }
+            first = --last;
+        }
+        return ret;
+    };
     static const float_vector2d xy_center(0.5, 0.5);
     std::cerr << "Voxelizing x-y plane... ";
     for(const bucket_map::value_type& xyvt : xyb) {
-        crossing_vector crossings;
-        for(const float_triangle3d& triangle : xyvt.second) {
-            float_vector3d::value_type crossing;
-            if(z_ray_intersection(triangle, xyvt.first + xy_center, 
-                    crossing)) {
-                crossings.push_back(crossing);
-            }
-        }
-        std::sort(crossings.begin(), crossings.end());
-        for(std::size_t i = 0; i + 1 < crossings.size(); ++i) {
-            for(float coord = crossings[i]; coord < crossings[i + 1]; 
-                    ++coord) {
-                int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord + 0.5);
-                xyvox.set_voxel(
-                        xyvt.first.x - min_xyz.x, 
-                        xyvt.first.y - min_xyz.y, 
-                        coord_i - min_xyz.z, 
-                        voxel(true, true));
-            }
+        for(int_vector3d::value_type cz : 
+                multicast_ray(xyvt, &z_ray_intersection, min_xyz.z)) {
+            xyvox.set_voxel(
+                    xyvt.first.x - min_xyz.x, 
+                    xyvt.first.y - min_xyz.y, 
+                    cz, 
+                    voxel(true, true));
         }
     }
     std::cerr << "DONE!" << std::endl;
     std::cerr << "Voxelizing y-z plane... ";
     for(const bucket_map::value_type& yzvt : yzb) {
-        crossing_vector crossings;
-        for(const float_triangle3d& triangle : yzvt.second) {
-            float_vector3d::value_type crossing;
-            if(x_ray_intersection(triangle, yzvt.first + xy_center,
-                    crossing)) {
-                crossings.push_back(crossing);
-            }
-        }
-        std::sort(crossings.begin(), crossings.end());
-        for(std::size_t i = 0; i + 1 < crossings.size(); ++i) {
-            for(float coord = crossings[i]; coord < crossings[i + 1]; 
-                    ++coord) {
-                int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord + 0.5);
-                yzvox.set_voxel(
-                        coord_i - min_xyz.x, 
-                        yzvt.first.x - min_xyz.y,
-                        yzvt.first.y - min_xyz.z, 
-                        voxel(true, true));
-            }
+        for(int_vector3d::value_type cx : 
+                multicast_ray(yzvt, &x_ray_intersection, min_xyz.x)) {
+            yzvox.set_voxel(
+                    cx, 
+                    yzvt.first.x - min_xyz.y,
+                    yzvt.first.y - min_xyz.z, 
+                    voxel(true, true));
         }
     }
     std::cerr << "DONE!" << std::endl;
     std::cerr << "Voxelizing z-x plane... ";
     for(const bucket_map::value_type& zxvt : zxb) {
-        crossing_vector crossings;
-        for(const float_triangle3d& triangle : zxvt.second) {
-            float_vector3d::value_type crossing;
-            if(y_ray_intersection(triangle, zxvt.first + xy_center,
-                    crossing)) {
-                crossings.push_back(crossing);
-            }
-        }
-        std::sort(crossings.begin(), crossings.end());
-        for(std::size_t i = 0; i + 1 < crossings.size(); ++i) {
-            for(float coord = crossings[i]; coord < crossings[i + 1]; 
-                    ++coord) {
-                int_vector3d::value_type coord_i = 
-                        static_cast<int_vector3d::value_type>(coord + 0.5);
-                zxvox.set_voxel(
-                        zxvt.first.y - min_xyz.x, 
-                        coord_i - min_xyz.y,
-                        zxvt.first.x - min_xyz.z, 
-                        voxel(true, true));
-            }
+        for(int_vector3d::value_type cy : 
+                multicast_ray(zxvt, &y_ray_intersection, min_xyz.y)) {
+            zxvox.set_voxel(
+                    zxvt.first.y - min_xyz.x, 
+                    cy,
+                    zxvt.first.x - min_xyz.z, 
+                    voxel(true, true));
         }
     }
     std::cerr << "DONE!" << std::endl;
