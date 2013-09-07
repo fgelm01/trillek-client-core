@@ -25,6 +25,7 @@ opengl_graphics_service::~opengl_graphics_service()
 
 void opengl_graphics_service::prepare_rendering()
 {
+    glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);

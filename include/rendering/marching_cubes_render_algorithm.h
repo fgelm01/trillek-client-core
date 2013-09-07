@@ -28,6 +28,9 @@ class marching_cubes_render_algorithm
                                                 voxel& v6,voxel& v7);
         static std::bitset<8> cube_num_to_values(unsigned char cube_num);
         static void step(vector3d<float> pos,
+                         std::shared_ptr<mesh_data> model,
+                         voxel_data* data);
+        static void step(vector3d<float> pos,
                          unsigned char num,
                          float size,
                          std::shared_ptr<mesh_data> model,

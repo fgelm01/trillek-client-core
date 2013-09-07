@@ -15,6 +15,8 @@ public:
     ~dual_marching_cubes_render_algorithm();
     void process(voxel_model* node,graphics_service* service);
 private:
+    void handle_borders(std::shared_ptr<mesh_data> model,
+                        voxel_data* data);
     void create_dual_cells(voxel_octree* n0,voxel_octree* n1,
                            voxel_octree* n2,voxel_octree* n3,
                            voxel_octree* n4,voxel_octree* n5,
@@ -49,6 +51,8 @@ private:
                     std::shared_ptr<mesh_data> model,
                     voxel_data* data);
     void nodeProc(voxel_octree* n,std::shared_ptr<mesh_data> model,
+                  voxel_data* data);
+    void _nodeProc(voxel_octree* n,std::shared_ptr<mesh_data> model,
                   voxel_data* data);
 };
 

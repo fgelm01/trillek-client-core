@@ -297,12 +297,12 @@ void marching_cubes_render_algorithm::step( vector3d<float> p0,
     }
     for (int n=0; tritable[cubeindex][n] != -1; n+=3)
     {
-        model->add_polygon( edge_vertex_table[tritable[cubeindex][n+2]],
-                            edge_gradient_table[tritable[cubeindex][n+2]],
+        model->add_polygon( edge_vertex_table[tritable[cubeindex][n+0]],
+                            edge_gradient_table[tritable[cubeindex][n+0]],
                             edge_vertex_table[tritable[cubeindex][n+1]],
                             edge_gradient_table[tritable[cubeindex][n+1]],
-                            edge_vertex_table[tritable[cubeindex][n+0]],
-                            edge_gradient_table[tritable[cubeindex][n+0]]);
+                            edge_vertex_table[tritable[cubeindex][n+2]],
+                            edge_gradient_table[tritable[cubeindex][n+2]]);
     }
 }
 
@@ -337,6 +337,22 @@ void marching_cubes_render_algorithm::step( vector3d<float> pos,
              cubeindex,model,data);
 }
 
+void marching_cubes_render_algorithm::step(vector3d<float> pos,
+                                          std::shared_ptr<mesh_data> model,
+                                          voxel_data* data)
+{
+    std::array<uint16_t,8> n;
+    for(unsigned char i=0; i<8;++i)
+    {
+        n[i]=get_voxel_value(pos+num_to_offset(i,0,1),data);
+    }
+    unsigned char cube_num = values_to_cube_num(n);
+    if(cube_num==0||cube_num==0xFF)
+        return;
+    marching_cubes_render_algorithm::step(pos+vector3d<float>(0.5f,0.5f,0.5f),
+                                          cube_num,1.0f,model,data);
+}
+
 void marching_cubes_render_algorithm::process(voxel_model* node,
                                               std::shared_ptr<mesh_data> model)
 {
@@ -351,16 +367,7 @@ void marching_cubes_render_algorithm::process(voxel_model* node,
             for(int z=-1;z<static_cast<int>(size.z);++z)
             {
                 vector3d<float> pos(x,y,z);
-                std::array<uint16_t,8> n;
-                for(unsigned char i=0; i<8;++i)
-                {
-                    n[i]=get_voxel_value(pos+num_to_offset(i,0,1),data);
-                }
-                unsigned char cube_num = values_to_cube_num(n);
-                if(cube_num==0||cube_num==0xFF)
-                    continue;
-                this->step(pos+vector3d<float>(0.5f,0.5f,0.5f),
-                           cube_num,1.0f,model,data);
+                step(pos,model,data);
             }
         }
     }

@@ -2,6 +2,7 @@
 #include "rendering/marching_cubes_render_algorithm.h"
 #include "services/graphics_service.h"
 #include <SFML/OpenGL.hpp>
+#include <algorithm>
 #include "math/axis_aligned_box.h"
 #include "general/count_unique_params.h"
 #include "general/min_max.h"
@@ -39,7 +40,7 @@ std::size_t process_dual_cell_box(std::size_t cube_num,
     static_assert(are_same<voxel_data*,T..>::value,
         "Tried to call process_duall_cell_box with a \
         type other then voxel_octree*");
-    std::size_t min_size=min((n->get_size().x)...);
+    std::size_t min_size=min((n?n->get_size().x:2000)...);
     if(min_size>size)
     {
         axis_aligned_box face_box=center_box;
@@ -95,6 +96,36 @@ std::size_t process_dual_cell_edge(voxel_octree* n0,
     }
     return 0;
 }
+void dual_marching_cubes_render_algorithm::handle_borders(
+                                            std::shared_ptr<mesh_data> model,
+                                            voxel_data* data)
+{
+    vector3d<float> size=data->get_size();
+    for(int x=-1;x<static_cast<int>(size.x);++x)
+    {
+        for(int y=-1;y<static_cast<int>(size.y);++y)
+        {
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(x,y,-1),
+                            model,data);
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(x,y,static_cast<int>(size.x)-1),
+                            model,data);
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(x,-1,y),
+                            model,data);
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(x,static_cast<int>(size.x)-1,y),
+                            model,data);
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(-1,x,y),
+                            model,data);
+            marching_cubes_render_algorithm::step(
+                            vector3d<float>(static_cast<int>(size.x)-1,x,y),
+                            model,data);
+        }
+    }
+}
 
 void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                                                              voxel_octree* n1,
@@ -116,13 +147,15 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
         altered to comply with the standard used in the rest of the program
     */
 
-    std::array<voxel,8> v = {n0->get_voxel(),n1->get_voxel(),
-                             n4->get_voxel(),n5->get_voxel(),
-                             n2->get_voxel(),n3->get_voxel(),
-                             n6->get_voxel(),n7->get_voxel()};
-    std::array<voxel_octree*,8> n={n0,n1,n4,n5,n2,n3,n6,n7};
-
-
+    std::array<voxel,8> v = {{n0?n0->get_voxel():voxel(),
+                             n1?n1->get_voxel():voxel(),
+                             n4?n4->get_voxel():voxel(),
+                             n5?n5->get_voxel():voxel(),
+                             n2?n2->get_voxel():voxel(),
+                             n3?n3->get_voxel():voxel(),
+                             n6?n6->get_voxel():voxel(),
+                             n7?n7->get_voxel():voxel()}};
+    std::array<voxel_octree*,8> n={{n0,n1,n4,n5,n2,n3,n6,n7}};
     // First the cube_num is calculated, since we can skip the entire rest of
     // this function if the cube is entirely full(255) or empty(0)
     std::size_t cube_num= values_to_cube_num(v[0],v[1],v[2],v[3],
@@ -135,9 +168,9 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
     // For this we find the smallest cube
     // and while we are at it we also find the biggest size, which will be needed later
     std::size_t min_size_num=0;
-	std::size_t min_size=n0->get_size().x;
-	std::size_t max_size=min_size;
-    for(int i=1; i<8;++i) {
+	std::size_t min_size=std::numeric_limits<std::size_t>::max();
+	std::size_t max_size=0;
+    for(int i=0; i<8;++i) {
         if(n[i]->get_size().x<min_size) {
             min_size=n[i]->get_size().x;
             min_size_num=i;
@@ -195,7 +228,7 @@ void dual_marching_cubes_render_algorithm::create_dual_cells(voxel_octree* n0,
                                                                v[6],v[7]),
                                             model,center_box,0x4,data);
 
-        // And last we compute the 3 faces between the 3 positive axes above
+        // And then we compute the 3 faces between the 3 positive axes above
         // they are only drawn if both axes have a length > 0 since otherwise
         // one of their lengths would be 0 as well, resulting in unneded
         // processing and drawing
@@ -421,7 +454,7 @@ void dual_marching_cubes_render_algorithm::faceProcXZ(voxel_octree* n0,
     }
 }
 
-void dual_marching_cubes_render_algorithm::nodeProc(voxel_octree* n,
+void dual_marching_cubes_render_algorithm::_nodeProc(voxel_octree* n,
                                             std::shared_ptr<mesh_data> model,
                                                     voxel_data* data)
 {
@@ -429,7 +462,7 @@ void dual_marching_cubes_render_algorithm::nodeProc(voxel_octree* n,
     {
         // Visit all eight children
         for(int i=0; i<8; ++i)
-            nodeProc(n->get_child(i),model,data);
+            _nodeProc(n->get_child(i),model,data);
 
         faceProcXY(n->get_child(0,0,0),n->get_child(0,0,1),model,data);
         faceProcXY(n->get_child(1,0,0),n->get_child(1,0,1),model,data);
@@ -468,6 +501,16 @@ void dual_marching_cubes_render_algorithm::nodeProc(voxel_octree* n,
     }
 }
 
+void dual_marching_cubes_render_algorithm::nodeProc(voxel_octree* n,
+                                            std::shared_ptr<mesh_data> model,
+                                                    voxel_data* data)
+{
+    if(n->has_children())
+        _nodeProc(n,model,data);
+    else
+        vertProc(n,n,n,n,n,n,n,n,model,data);
+}
+
 void dual_marching_cubes_render_algorithm::process(voxel_model* node,graphics_service* service)
 {
     std::cerr << "Rendering start" << std::endl;
@@ -476,6 +519,7 @@ void dual_marching_cubes_render_algorithm::process(voxel_model* node,graphics_se
     voxel_data* r_d = node->get_render_data();
     voxel_octree* octree = voxel_octree::convert(r_d);
     nodeProc(octree,model,r_d);
+    handle_borders(model,r_d);
     service->register_model((uintptr_t)node,model);
     std::cerr << "Rendering end" << std::endl;
 }

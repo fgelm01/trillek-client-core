@@ -105,7 +105,7 @@ vector2d<T>& operator *=(vector2d<T>& lhs, const U& rhs) {
 template <typename T, typename U>
 vector2d<decltype(std::declval<T>() + std::declval<U>())> operator +(
         const vector2d<T>& lhs, const vector2d<U>& rhs) {
-    return make_vector2d(lhs.x + rhs.x, 
+    return make_vector2d(lhs.x + rhs.x,
                          lhs.y + rhs.y);
 }
 template <typename T, typename U>
@@ -212,8 +212,8 @@ bool operator !=(const vector3d<T>& lhs, const vector3d<U>& rhs) {
 }
 template <typename T, typename U>
 bool operator <(const vector3d<T>& lhs, const vector3d<U>& rhs) {
-    return lhs.x == rhs.x ? 
-            (lhs.y == rhs.y ? lhs.z < rhs.z : lhs.y < rhs.y) 
+    return lhs.x == rhs.x ?
+            (lhs.y == rhs.y ? lhs.z < rhs.z : lhs.y < rhs.y)
             : lhs.x < rhs.x;
 }
 
