@@ -8,6 +8,12 @@
 
 namespace trillek {
 
+typedef std::map<int_vector2d, std::vector<
+        std::reference_wrapper<const float_triangle3d> > >
+        bucket_map;
+typedef std::vector<std::reference_wrapper<const bucket_map::value_type> >
+        bucket_reference_vector;
+
 /**
  * @brief union zero octrees
  * @param args nothing
@@ -45,7 +51,7 @@ voxel_octree voxelize_octree_union(Lhs&& lhs, Rhs&& rhs, Args&&... args) {
     ret.set_offset(l.get_offset());
     if(l.has_children() && !r.has_children()) {
         if(r.get_voxel().is_opaque()) {
-            ret.fill_voxel(r.get_voxel());
+            ret.set_voxel(r.get_voxel());
         } else {
             for(std::size_t i = 0; i < 8; ++i) {
                 ret.set_child(i, *l.get_child(i));
@@ -53,7 +59,7 @@ voxel_octree voxelize_octree_union(Lhs&& lhs, Rhs&& rhs, Args&&... args) {
         }
     } else if(r.has_children() && !l.has_children()) {
         if(l.get_voxel().is_opaque()) {
-            ret.fill_voxel(l.get_voxel());
+            ret.set_voxel(l.get_voxel());
         } else {
             for(std::size_t i = 0; i < 8; ++i) {
                 ret.set_child(i, *r.get_child(i));
@@ -66,7 +72,7 @@ voxel_octree voxelize_octree_union(Lhs&& lhs, Rhs&& rhs, Args&&... args) {
                     *r.get_child(i)));
         }
     } else {
-        ret.fill_voxel(voxel(true, 
+        ret.set_voxel(voxel(true, 
                 l.get_voxel().is_opaque() || 
                 r.get_voxel().is_opaque()));
     }

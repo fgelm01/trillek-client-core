@@ -17,8 +17,8 @@ namespace trillek
 client::client()
 {
     // TODO: Abstract this out
-    //auto algorithm=new marching_cubes_render_algorithm();
-    auto algorithm = new dual_marching_cubes_render_algorithm();
+    auto algorithm=new marching_cubes_render_algorithm();
+    //auto algorithm = new dual_marching_cubes_render_algorithm();
     auto camera=new first_person_camera();
     this->events = trillek::make_unique<event_service>(this);
     this->graphics = trillek::make_unique<opengl_graphics_service>(this,

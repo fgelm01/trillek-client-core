@@ -20,7 +20,7 @@ voxel_octree::voxel_octree(const voxel_octree& other)
 }
 voxel_octree::voxel_octree(voxel_octree&& other)
         : _size_exp(other._size_exp), _data(std::move(other._data)),
-        _has_children(other._has_children),_offset(other._offset) {
+        _has_children(other._has_children), _offset(other._offset) {
     if(_has_children) {
         for(std::size_t i = 0; i != _children.size(); ++i) {
             _children[i] = std::move(other._children[i]);
@@ -110,7 +110,7 @@ void voxel_octree::set_voxel(std::size_t x,
     }
 }
 
-void voxel_octree::fill_voxel(const voxel& v) {
+void voxel_octree::set_voxel(const voxel& v) {
     if(_has_children) {
         for(voxel_octree_ptr& child : _children) {
             child.reset(nullptr);
@@ -253,6 +253,8 @@ void voxel_octree::set_child(std::size_t n, voxel_octree&& c) {
     if(!_has_children) {
         split_children();
     }
+    c._size_exp = _size_exp - 1;
+    c._offset = _offset + get_child_offset_by_index(n);
     _children[n] = make_unique<voxel_octree>(std::move(c));
     combine_children();
 }

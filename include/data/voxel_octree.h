@@ -43,7 +43,7 @@ public:
      * @brief Fill the entire volume of this node with v
      * If had children, they will be removed
      */
-    void fill_voxel(const voxel& v);
+    void set_voxel(const voxel& v);
     offset_vector3d get_child_offset_by_index(std::size_t index) const;
     offset_vector3d get_offset() const {return _offset;}
     void set_offset(const offset_vector3d& offset) { _offset = offset; }

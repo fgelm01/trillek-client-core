@@ -56,6 +56,11 @@ struct vector3d
                              z * other.x - x * other.z,
                              x * other.y - y * other.x);
     }
+    template <typename U>
+    decltype(std::declval<T>() * std::declval<U>()) dot(
+            const vector3d<U>& other) const {
+        return (x * other.x) + (y * other.y) + (z * other.z);
+    }
     float length() const {
         return std::sqrt(x * x + y * y + z * z);
     }

@@ -9,6 +9,7 @@
 #include <iostream>
 #include "voxelize_mesh_defines.h"
 #include "voxelize_ray_trace.h"
+#include "voxelize_surface.h"
 
 namespace trillek {
 
@@ -66,7 +67,8 @@ data* voxel_mesh_asset_loader::load(const std::string& file) const {
     std::cerr << "Extracted " << all_triangles.size() 
             << " triangles" << std::endl;
     //limit_mesh_extent(all_triangles, 496);
-    return new voxel_octree(voxelize_mesh_ray_trace(all_triangles, 1));
+    //return new voxel_octree(voxelize_mesh_ray_trace(all_triangles, 1));
+    return new voxel_octree(voxelize_mesh_surface(all_triangles, 1.f));
 }
 
 void limit_mesh_extent(triangle3d_vector& all_triangles, 
