@@ -57,7 +57,7 @@ public:
     static voxel_octree* convert(voxel_data* data);
 
     bool has_children(){return _has_children;}
-    voxel_octree* get_child(unsigned char num);
+    voxel_octree* get_child(std::size_t n);
     voxel_octree* get_child(std::size_t x, std::size_t y, std::size_t z);
 protected:
 private:

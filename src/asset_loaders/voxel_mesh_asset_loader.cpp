@@ -33,6 +33,15 @@ typedef std::vector<float_triangle3d> triangle3d_vector;
 typedef std::map<int_vector2d, std::vector<
         std::reference_wrapper<const float_triangle3d> > >
         bucket_map;
+/**
+ * Make sure the maximum extent of the mesh is less than 
+ * max_extent
+ * @param all_triangles all the triangles
+ * @param max_extent maximum extent
+ * Absolute positions may change, but proportions are preserved
+ */
+void limit_mesh_extent(triangle3d_vector& all_triangles, 
+        const float max_extent);
 voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles);
 /**
  * @brief Test if z ray at xy intersects triangle
@@ -97,6 +106,7 @@ data* voxel_mesh_asset_loader::load(const std::string& file) const {
     }
     std::cerr << "Extracted " << all_triangles.size() 
             << " triangles" << std::endl;
+    //limit_mesh_extent(all_triangles, 496);
     return new voxel_octree(voxelize_mesh(all_triangles));
 }
 
@@ -187,6 +197,39 @@ bool consistent_point_in_triangle(const float_triangle2d& triangle,
     const bool y = y_compute_winding(triangle, xy) != 0;
     return x || y;
 }
+void limit_mesh_extent(triangle3d_vector& all_triangles, 
+        const float max_extent) {
+    //float or double or similar
+    static const auto MIN_VAL = std::numeric_limits<
+            triangle3d_vector::value_type::value_type::value_type>::min();
+    //float or double or similar
+    static const auto MAX_VAL = std::numeric_limits<
+            triangle3d_vector::value_type::value_type::value_type>::max();
+    float_vector3d min_xyz(MAX_VAL, MAX_VAL, MAX_VAL);
+    float_vector3d max_xyz(MIN_VAL, MIN_VAL, MIN_VAL);
+    for(const float_triangle3d& triangle : all_triangles) {
+        for(std::size_t i = 0; i < 3; ++i) {
+            const float_vector3d cur_vertex = triangle[i];
+            min_xyz.x = std::min(min_xyz.x, cur_vertex.x);
+            min_xyz.y = std::min(min_xyz.y, cur_vertex.y);
+            min_xyz.z = std::min(min_xyz.z, cur_vertex.z);
+            max_xyz.x = std::max(max_xyz.x, cur_vertex.x);
+            max_xyz.y = std::max(max_xyz.y, cur_vertex.y);
+            max_xyz.z = std::max(max_xyz.z, cur_vertex.z);
+        }
+    }
+    const float actual_extent = std::max(max_xyz.z - min_xyz.z, 
+            std::max(max_xyz.y - min_xyz.y, 
+            max_xyz.x - min_xyz.x));
+    if(actual_extent > max_extent) {
+        const float ratio = max_extent / actual_extent;
+        for(float_triangle3d& triangle : all_triangles) {
+            for(std::size_t i = 0; i < 3; ++i) {
+                triangle[i] *= ratio;
+            }
+        }
+    }
+}
 voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     //float or double or similar
     static const auto MIN_VAL = std::numeric_limits<
@@ -199,7 +242,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             int_vector3d::value_type>::min();
     static const auto MAX_INT_VAL = std::numeric_limits<
             int_vector3d::value_type>::max();
-    static const std::size_t magnify = 4;
+    static const std::size_t magnify = 3;
     typedef std::vector<float> crossing_vector;
     typedef std::vector<int_vector3d::value_type> discrete_crossing_vector;
     //bucket sort triangles along each plane
@@ -248,6 +291,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                 x != max_int.x; ++x) {
             for(int_vector3d::value_type y = min_int.y; 
                     y != max_int.y; ++y) {
+#pragma omp critical(xyb_crit)
                 xyb[int_vector2d(x,y)].push_back(std::ref(arg));
             }
         }
@@ -255,6 +299,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                 y != max_int.y; ++y) {
             for(int_vector3d::value_type z = min_int.z; 
                     z != max_int.z; ++z) {
+#pragma omp critical(yzb_crit)
                 yzb[int_vector2d(y, z)].push_back(std::ref(arg));
             }
         }
@@ -262,18 +307,24 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
                 z != max_int.z; ++z) {
             for(int_vector3d::value_type x = min_int.x; 
                     x != max_int.x; ++x) {
+#pragma omp critical(zxb_crit)
                 zxb[int_vector2d(z, x)].push_back(std::ref(arg));
             }
         }
         return ret;
     };
     std::cerr << "Building buckets" << std::endl;
-    for(const float_triangle3d& triangle : all_triangles) {
-        float_vector3d min_extents, max_extents;
-        std::tie(min_extents, max_extents) = triangle_extents(triangle);
-        //std::cerr << 
-                bucket_triangle(min_extents, max_extents, triangle);
-        //std::cerr << ", ";
+#pragma omp parallel default(shared)
+    {
+#pragma omp for schedule(auto)
+        for(std::size_t i = 0; i < all_triangles.size(); ++i) {
+            const float_triangle3d& triangle = all_triangles[i];
+            float_vector3d min_extents, max_extents;
+            std::tie(min_extents, max_extents) = triangle_extents(triangle);
+            //std::cerr << 
+                    bucket_triangle(min_extents, max_extents, triangle);
+            //std::cerr << ", ";
+        }
     }
     std::cerr << "Bucket counts are " << 
             "\n\t" << xyb.size() << 
@@ -403,87 +454,125 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
     {
 #pragma omp section
         {
-            std::cerr << "Voxelizing x-y plane... ";
+#pragma omp critical
+            std::cerr << "Voxelizing x-y plane" << std::endl;
             for(const bucket_map::value_type& xyvt : xyb) {
-                for(const float_vector2d& offset : offsets) {
-                    const std::size_t voxel_x = offset.x + 
-                            (xyvt.first.x - min_xyz.x) * offset_scale;
-                    const std::size_t voxel_y = offset.y + 
-                            (xyvt.first.y - min_xyz.y) * offset_scale;
-                    for(int_vector3d::value_type cz : 
-                            multicast_ray(xyvt, offset, offset_scale, 
-                            &z_ray_intersection, min_xyz.z)) {
-                        xyvox.set_voxel(voxel_x, voxel_y, cz, voxel(true, true));
+//#pragma omp parallel default(shared)
+                {
+//#pragma omp for schedule(auto)
+                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                            ++offset_i) {
+                        const float_vector2d& offset = offsets[offset_i];
+                        const std::size_t voxel_x = offset.x + 
+                                (xyvt.first.x - min_xyz.x) * offset_scale;
+                        const std::size_t voxel_y = offset.y + 
+                                (xyvt.first.y - min_xyz.y) * offset_scale;
+                        for(int_vector3d::value_type cz : 
+                                multicast_ray(xyvt, offset, offset_scale, 
+                                &z_ray_intersection, min_xyz.z)) {
+//#pragma omp critical(xyvox_crit)
+                            xyvox.set_voxel(voxel_x, voxel_y, cz, voxel(true, true));
+                        }
                     }
                 }
             }
-            std::cerr << "DONE!" << std::endl;
+#pragma omp critical
+            std::cerr << "Done voxelizing x-y plane" << std::endl;
+            xyb.clear();
         }
 #pragma omp section
         {
-            std::cerr << "Voxelizing y-z plane... ";
+#pragma omp critical
+            std::cerr << "Voxelizing y-z plane" << std::endl;
             for(const bucket_map::value_type& yzvt : yzb) {
-                for(const float_vector2d& offset : offsets) {
-                    const std::size_t voxel_y = offset.x + 
-                            (yzvt.first.x - min_xyz.y) * offset_scale;
-                    const std::size_t voxel_z = offset.y + 
-                            (yzvt.first.y - min_xyz.z) * offset_scale;
-                    for(int_vector3d::value_type cx : 
-                            multicast_ray(yzvt, offset, offset_scale, 
-                            &x_ray_intersection, min_xyz.x)) {
-                        yzvox.set_voxel(cx, voxel_y,voxel_z, voxel(true, true));
+//#pragma omp parallel default(shared)
+                {
+//#pragma omp for schedule(auto)
+                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                            ++offset_i) {
+                        const float_vector2d& offset = offsets[offset_i];
+                        const std::size_t voxel_y = offset.x + 
+                                (yzvt.first.x - min_xyz.y) * offset_scale;
+                        const std::size_t voxel_z = offset.y + 
+                                (yzvt.first.y - min_xyz.z) * offset_scale;
+                        for(int_vector3d::value_type cx : 
+                                multicast_ray(yzvt, offset, offset_scale, 
+                                &x_ray_intersection, min_xyz.x)) {
+//#pragma omp critical(yzvox_crit)
+                            yzvox.set_voxel(cx, voxel_y,voxel_z, voxel(true, true));
+                        }
                     }
                 }
             }
-            std::cerr << "DONE!" << std::endl;
+#pragma omp critical
+            std::cerr << "Done voxelizing y-z plane" << std::endl;
+            yzb.clear();
         }
 #pragma omp section
         {
-            std::cerr << "Voxelizing z-x plane... ";
+#pragma omp critical
+            std::cerr << "Voxelizing z-x plane" << std::endl;
             for(const bucket_map::value_type& zxvt : zxb) {
-                for(const float_vector2d& offset : offsets) {
-                    const std::size_t voxel_x = offset.y + 
-                            (zxvt.first.y - min_xyz.x) * offset_scale;
-                    const std::size_t voxel_z = offset.x + 
-                            (zxvt.first.x - min_xyz.z) * offset_scale;
-                    for(int_vector3d::value_type cy : 
-                            multicast_ray(zxvt, offset, offset_scale, 
-                            &y_ray_intersection, min_xyz.y)) {
-                        zxvox.set_voxel(voxel_x, cy, voxel_z, voxel(true, true));
+//#pragma omp parallel default(shared)
+                {
+//#pragma omp for schedule(auto)
+                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                            ++offset_i) {
+                        const float_vector2d& offset = offsets[offset_i];
+                        const std::size_t voxel_x = offset.y + 
+                                (zxvt.first.y - min_xyz.x) * offset_scale;
+                        const std::size_t voxel_z = offset.x + 
+                                (zxvt.first.x - min_xyz.z) * offset_scale;
+                        for(int_vector3d::value_type cy : 
+                                multicast_ray(zxvt, offset, offset_scale, 
+                                &y_ray_intersection, min_xyz.y)) {
+//#pragma omp critical(zxvox_crit)
+                            zxvox.set_voxel(voxel_x, cy, voxel_z, voxel(true, true));
+                        }
                     }
                 }
             }
-            std::cerr << "DONE!" << std::endl;
+#pragma omp critical
+            std::cerr << "Done voxelizing z-x plane" << std::endl;
+            zxb.clear();
         }
     }
-    //end parallel part
     std::size_t xy_count = 0;
     std::size_t yz_count = 0;
     std::size_t zx_count = 0;
     voxel_octree ret;
     ret.reserve_space(ret_size);
-    for(std::size_t z = 0; z < ret_size.z; ++z) {
-        for(std::size_t y = 0; y < ret_size.y; ++y) {
-            for(std::size_t x = 0; x < ret_size.x; ++x) {
-                int count = 0;
-                if(xyvox.get_voxel(x,y,z).is_opaque()) {
-                    ++count;
-                    ++xy_count;
-                }
-                if(yzvox.get_voxel(x,y,z).is_opaque()) {
-                    ++count;
-                    ++yz_count;
-                }
-                if(zxvox.get_voxel(x,y,z).is_opaque()) {
-                    ++count;
-                    ++zx_count;
-                }
-                if(count != 0) {
-                    ret.set_voxel(x, y, z, voxel(true, true));
+    std::cerr << "Starting voxel union" << std::endl;
+#pragma omp parallel default(shared)
+    {
+#pragma omp for schedule(auto)
+        for(std::size_t z = 0; z < ret_size.z; ++z) {
+            for(std::size_t y = 0; y < ret_size.y; ++y) {
+                for(std::size_t x = 0; x < ret_size.x; ++x) {
+                    int count = 0;
+                    if(xyvox.get_voxel(x,y,z).is_opaque()) {
+                        ++count;
+                        ++xy_count;
+                    }
+                    if(yzvox.get_voxel(x,y,z).is_opaque()) {
+                        ++count;
+                        ++yz_count;
+                    }
+                    if(zxvox.get_voxel(x,y,z).is_opaque()) {
+                        ++count;
+                        ++zx_count;
+                    }
+#pragma omp critical
+                    {
+                        if(count != 0) {
+                            ret.set_voxel(x, y, z, voxel(true, true));
+                        }
+                    }
                 }
             }
         }
     }
+    std::cerr << "Done voxel union" << std::endl;
     std::cerr << "Voxel counts are: " << 
             "\n\t" << xy_count << 
             "\n\t" << yz_count << 

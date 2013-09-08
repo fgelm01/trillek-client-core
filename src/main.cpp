@@ -15,6 +15,7 @@
 int main(int argc, char **argv)
 {
     omp_set_dynamic(1);
+    omp_set_nested(1);
     trillek::client client;
 
     // Some test-code to load/create something to test the rendering with

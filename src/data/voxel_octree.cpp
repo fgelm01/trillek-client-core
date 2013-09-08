@@ -218,10 +218,10 @@ voxel_octree* voxel_octree::convert(voxel_data* data) {
     return retval;
 }
 
-voxel_octree* voxel_octree::get_child(unsigned char num)
+voxel_octree* voxel_octree::get_child(std::size_t n)
 {
     assert(_has_children);
-    return _children[num].get();
+    return _children[n].get();
 }
 
 voxel_octree* voxel_octree::get_child(std::size_t x, std::size_t y, std::size_t z)
