@@ -21,12 +21,13 @@ FILE(GLOB_RECURSE tmp_raw_src_list include/*.hpp)
 SET(src_list ${src_list} ${tmp_raw_src_list})
 
 #In case you want to profile, comment out otherwise
-#SET(CMAKE_CXX_FLAGS "-pg")  
+#SET(CMAKE_CXX_FLAGS "-pg")
 
 if(src_list)
 	add_executable(trillek-client-core ${src_list})
-	
-	include_directories(trillek-client-core
+
+	include_directories(
+		${PROJECT_SOURCE_DIR}
 		${TRILLEK_INCLUDE_DIR}
 		${OPENGL_INCLUDE_DIR}
 		${SFML_INCLUDE_DIR}
@@ -41,28 +42,28 @@ if(src_list)
 	set_target_properties(trillek-client-core PROPERTIES LINKER_LANGUAGE CXX)
     add_definitions("-std=c++11 -Wall -Wextra -O2 -fopenmp")
 	if(WIN32)
-		target_link_libraries(trillek-client-core 
-            "sfml-graphics" 
-            "sfml-audio" 
-            "sfml-network" 
-            "sfml-window" 
-            "sfml-system" 
-            "opengl32" 
-            "GLEW32" 
+		target_link_libraries(trillek-client-core
+            "sfml-graphics"
+            "sfml-audio"
+            "sfml-network"
+            "sfml-window"
+            "sfml-system"
+            "opengl32"
+            "GLEW32"
             "stdc++"
             "assimp"
             "zlib")
 	else(WIN32)
-		target_link_libraries(trillek-client-core 
-            "sfml-graphics" 
-            "sfml-audio" 
-            "sfml-network" 
-            "sfml-window" 
-            "sfml-system" 
-            "GL" 
-            "GLEW" 
-            "stdc++" 
-            "jpeg" 
+		target_link_libraries(trillek-client-core
+            "sfml-graphics"
+            "sfml-audio"
+            "sfml-network"
+            "sfml-window"
+            "sfml-system"
+            "GL"
+            "GLEW"
+            "stdc++"
+            "jpeg"
             "assimp")
 	endif()
     set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
