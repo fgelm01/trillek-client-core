@@ -33,6 +33,8 @@ typedef std::vector<float_triangle3d> triangle3d_vector;
 typedef std::map<int_vector2d, std::vector<
         std::reference_wrapper<const float_triangle3d> > >
         bucket_map;
+typedef std::vector<std::reference_wrapper<const bucket_map::value_type> >
+        bucket_reference_vector;
 /**
  * Make sure the maximum extent of the mesh is less than 
  * max_extent
@@ -242,7 +244,7 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
             int_vector3d::value_type>::min();
     static const auto MAX_INT_VAL = std::numeric_limits<
             int_vector3d::value_type>::max();
-    static const std::size_t magnify = 3;
+    static const std::size_t magnify = 2;
     typedef std::vector<float> crossing_vector;
     typedef std::vector<int_vector3d::value_type> discrete_crossing_vector;
     //bucket sort triangles along each plane
@@ -450,90 +452,114 @@ voxel_octree voxelize_mesh(const triangle3d_vector& all_triangles) {
         offsets[i] = int_vector2d(i % magnify, 
                 i / magnify);
     }
+    auto make_bucket_reference = [](
+            const bucket_map& bm)->bucket_reference_vector {
+        bucket_reference_vector ret;
+        ret.reserve(bm.size());
+        for(const bucket_map::value_type& vt : bm) {
+            ret.push_back(std::ref(vt));
+        }
+        return ret;
+    };
 #pragma omp parallel sections default(shared)
     {
 #pragma omp section
         {
 #pragma omp critical
             std::cerr << "Voxelizing x-y plane" << std::endl;
-            for(const bucket_map::value_type& xyvt : xyb) {
-//#pragma omp parallel default(shared)
-                {
-//#pragma omp for schedule(auto)
-                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
-                            ++offset_i) {
-                        const float_vector2d& offset = offsets[offset_i];
-                        const std::size_t voxel_x = offset.x + 
-                                (xyvt.first.x - min_xyz.x) * offset_scale;
-                        const std::size_t voxel_y = offset.y + 
-                                (xyvt.first.y - min_xyz.y) * offset_scale;
-                        for(int_vector3d::value_type cz : 
-                                multicast_ray(xyvt, offset, offset_scale, 
-                                &z_ray_intersection, min_xyz.z)) {
-//#pragma omp critical(xyvox_crit)
-                            xyvox.set_voxel(voxel_x, voxel_y, cz, voxel(true, true));
+            bucket_reference_vector xybr = make_bucket_reference(xyb);
+#pragma omp parallel default(shared)
+            {
+#pragma omp for schedule(auto)
+                for(std::size_t i = 0; i < xybr.size(); ++i) {
+                    const bucket_map::value_type& xyvt = xybr[i];
+                    {
+                        for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                                ++offset_i) {
+                            const float_vector2d& offset = offsets[offset_i];
+                            const std::size_t voxel_x = offset.x + 
+                                    (xyvt.first.x - min_xyz.x) * offset_scale;
+                            const std::size_t voxel_y = offset.y + 
+                                    (xyvt.first.y - min_xyz.y) * offset_scale;
+                            for(int_vector3d::value_type cz : 
+                                    multicast_ray(xyvt, offset, offset_scale, 
+                                    &z_ray_intersection, min_xyz.z)) {
+#pragma omp critical(xyvox_crit)
+                                xyvox.set_voxel(voxel_x, voxel_y, cz, voxel(true, true));
+                            }
                         }
                     }
                 }
             }
 #pragma omp critical
             std::cerr << "Done voxelizing x-y plane" << std::endl;
+            xybr.clear();
             xyb.clear();
         }
 #pragma omp section
         {
 #pragma omp critical
             std::cerr << "Voxelizing y-z plane" << std::endl;
-            for(const bucket_map::value_type& yzvt : yzb) {
-//#pragma omp parallel default(shared)
-                {
-//#pragma omp for schedule(auto)
-                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
-                            ++offset_i) {
-                        const float_vector2d& offset = offsets[offset_i];
-                        const std::size_t voxel_y = offset.x + 
-                                (yzvt.first.x - min_xyz.y) * offset_scale;
-                        const std::size_t voxel_z = offset.y + 
-                                (yzvt.first.y - min_xyz.z) * offset_scale;
-                        for(int_vector3d::value_type cx : 
-                                multicast_ray(yzvt, offset, offset_scale, 
-                                &x_ray_intersection, min_xyz.x)) {
-//#pragma omp critical(yzvox_crit)
-                            yzvox.set_voxel(cx, voxel_y,voxel_z, voxel(true, true));
+            bucket_reference_vector yzbr = make_bucket_reference(yzb);
+#pragma omp parallel default(shared)
+            {
+#pragma omp for schedule(auto)
+                for(std::size_t i = 0; i < yzbr.size(); ++i) {
+                    const bucket_map::value_type& yzvt = yzbr[i];
+                    {
+                        for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                                ++offset_i) {
+                            const float_vector2d& offset = offsets[offset_i];
+                            const std::size_t voxel_y = offset.x + 
+                                    (yzvt.first.x - min_xyz.y) * offset_scale;
+                            const std::size_t voxel_z = offset.y + 
+                                    (yzvt.first.y - min_xyz.z) * offset_scale;
+                            for(int_vector3d::value_type cx : 
+                                    multicast_ray(yzvt, offset, offset_scale, 
+                                    &x_ray_intersection, min_xyz.x)) {
+#pragma omp critical(yzvox_crit)
+                                yzvox.set_voxel(cx, voxel_y,voxel_z, voxel(true, true));
+                            }
                         }
                     }
                 }
             }
 #pragma omp critical
             std::cerr << "Done voxelizing y-z plane" << std::endl;
+            yzbr.clear();
             yzb.clear();
         }
 #pragma omp section
         {
 #pragma omp critical
             std::cerr << "Voxelizing z-x plane" << std::endl;
-            for(const bucket_map::value_type& zxvt : zxb) {
-//#pragma omp parallel default(shared)
-                {
-//#pragma omp for schedule(auto)
-                    for(std::size_t offset_i = 0; offset_i < offsets.size(); 
-                            ++offset_i) {
-                        const float_vector2d& offset = offsets[offset_i];
-                        const std::size_t voxel_x = offset.y + 
-                                (zxvt.first.y - min_xyz.x) * offset_scale;
-                        const std::size_t voxel_z = offset.x + 
-                                (zxvt.first.x - min_xyz.z) * offset_scale;
-                        for(int_vector3d::value_type cy : 
-                                multicast_ray(zxvt, offset, offset_scale, 
-                                &y_ray_intersection, min_xyz.y)) {
-//#pragma omp critical(zxvox_crit)
-                            zxvox.set_voxel(voxel_x, cy, voxel_z, voxel(true, true));
+            bucket_reference_vector zxbr = make_bucket_reference(zxb);
+#pragma omp parallel default(shared)
+            {
+#pragma omp for schedule(auto)
+                for(std::size_t i = 0; i < zxbr.size(); ++i) {
+                    const bucket_map::value_type& zxvt = zxbr[i];
+                    {
+                        for(std::size_t offset_i = 0; offset_i < offsets.size(); 
+                                ++offset_i) {
+                            const float_vector2d& offset = offsets[offset_i];
+                            const std::size_t voxel_x = offset.y + 
+                                    (zxvt.first.y - min_xyz.x) * offset_scale;
+                            const std::size_t voxel_z = offset.x + 
+                                    (zxvt.first.x - min_xyz.z) * offset_scale;
+                            for(int_vector3d::value_type cy : 
+                                    multicast_ray(zxvt, offset, offset_scale, 
+                                    &y_ray_intersection, min_xyz.y)) {
+#pragma omp critical(zxvox_crit)
+                                zxvox.set_voxel(voxel_x, cy, voxel_z, voxel(true, true));
+                            }
                         }
                     }
                 }
             }
 #pragma omp critical
             std::cerr << "Done voxelizing z-x plane" << std::endl;
+            zxbr.clear();
             zxb.clear();
         }
     }
