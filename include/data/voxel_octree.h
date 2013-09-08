@@ -14,11 +14,23 @@ public:
     using voxel_data::size_vector3d;
     using voxel_data::get_voxel;
     using voxel_data::set_voxel;
+    typedef vector3d<float> offset_vector3d;
     voxel_octree();
     voxel_octree(const voxel_octree& other);
     voxel_octree(voxel_octree&& other);
     voxel_octree(voxel_data* other);
     virtual ~voxel_octree();
+    /**
+     * @brief Get the voxel at the indicated position
+     * relative to this node's origin
+     * @param x relative x coordinate
+     * @param y relative y coordinate
+     * @param z relative z coordinate
+     * @return the voxel at that position
+     * If this is a leaf node, returns its voxel. Otherwise 
+     * recurse into the appropriate child and get the voxel with 
+     * the modified offsets
+     */
     const voxel& get_voxel(std::size_t x,
                     std::size_t y,
                     std::size_t z) const override;
@@ -27,8 +39,14 @@ public:
                    std::size_t y,
                    std::size_t z,
                    const voxel& v) override;
-    vector3d<float> get_child_offset_by_index(unsigned char index);
-    vector3d<float> get_offset(){return _offset;}
+    /**
+     * @brief Fill the entire volume of this node with v
+     * If had children, they will be removed
+     */
+    void fill_voxel(const voxel& v);
+    offset_vector3d get_child_offset_by_index(std::size_t index) const;
+    offset_vector3d get_offset() const {return _offset;}
+    void set_offset(const offset_vector3d& offset) { _offset = offset; }
     size_vector3d get_size() const override;
     data_type get_type() const override {return dt_voxel_octree;}
     /**
@@ -56,14 +74,23 @@ public:
     void reserve_space(const size_vector3d& xyz);
     static voxel_octree* convert(voxel_data* data);
 
-    bool has_children(){return _has_children;}
+    bool has_children() const {return _has_children;}
+    const voxel_octree* get_child(std::size_t n) const;
+    const voxel_octree* get_child(std::size_t x, 
+            std::size_t y, std::size_t z) const;
     voxel_octree* get_child(std::size_t n);
     voxel_octree* get_child(std::size_t x, std::size_t y, std::size_t z);
+    void set_child(std::size_t n, voxel_octree&& c);
+    void set_child(std::size_t x, std::size_t y, std::size_t z, 
+            voxel_octree&& c);
+    void set_child(std::size_t n, const voxel_octree& c);
+    void set_child(std::size_t x, std::size_t y, std::size_t z, 
+            const voxel_octree& c);
 protected:
 private:
     ///@brief construct an octree with this size having data
     explicit voxel_octree(std::size_t size_exp, const voxel& data,
-                          vector3d<float> offset);
+                          offset_vector3d offset);
     typedef std::unique_ptr<voxel_octree> voxel_octree_ptr;
     typedef std::array<voxel_octree_ptr, 8> voxel_child_array;
     std::size_t compute_child_index(std::size_t x,
@@ -91,7 +118,7 @@ private:
     voxel _data;
     voxel_child_array _children;
     bool _has_children;
-    vector3d<float> _offset;
+    offset_vector3d _offset;
 };
 
 }
