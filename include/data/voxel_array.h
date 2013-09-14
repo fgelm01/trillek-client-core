@@ -3,6 +3,7 @@
 
 #include "data/voxel_data.h"
 #include "data/voxel_octree.h"
+#include <vector>
 
 namespace trillek
 {

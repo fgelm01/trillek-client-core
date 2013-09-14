@@ -4,7 +4,6 @@
  * You never know how many vector.h exist out there
  * so make your include guards somewhat unique
  */
-#include <vector>
 #include <cmath>
 #include <functional>
 #include <type_traits>
@@ -86,6 +85,36 @@ vector3d<typename std::decay<T>::type> make_vector3d(T&& x, T&& y, T&& z) {
     return vector3d<typename std::decay<T>::type>(std::forward<T>(x),
                                                   std::forward<T>(y),
                                                   std::forward<T>(z));
+}
+
+template <typename T>
+vector2d<typename std::decay<T>::type> min_vector(
+        const vector2d<T>& lhs, const vector2d<T>& rhs) {
+    return make_vector2d(std::min(lhs.x, rhs.x),
+                         std::min(lhs.y, rhs.y));
+}
+
+template <typename T>
+vector3d<typename std::decay<T>::type> min_vector(
+        const vector3d<T>& lhs, const vector3d<T>& rhs) {
+    return make_vector3d(std::min(lhs.x, rhs.x),
+                         std::min(lhs.y, rhs.y),
+                         std::min(lhs.z, rhs.z));
+}
+
+template <typename T>
+vector2d<typename std::decay<T>::type> max_vector(
+        const vector2d<T>& lhs, const vector2d<T>& rhs) {
+    return make_vector2d(std::max(lhs.x, rhs.x),
+                         std::max(lhs.y, rhs.y));
+}
+
+template <typename T>
+vector3d<typename std::decay<T>::type> max_vector(
+        const vector3d<T>& lhs, const vector3d<T>& rhs) {
+    return make_vector3d(std::max(lhs.x, rhs.x),
+                         std::max(lhs.y, rhs.y),
+                         std::max(lhs.z, rhs.z));
 }
 
 template <typename T>

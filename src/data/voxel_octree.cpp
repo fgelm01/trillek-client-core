@@ -256,7 +256,7 @@ void voxel_octree::set_child(std::size_t n, voxel_octree&& c) {
     c._size_exp = _size_exp - 1;
     c._offset = _offset + get_child_offset_by_index(n);
     _children[n] = make_unique<voxel_octree>(std::move(c));
-    combine_children();
+    //combine_children();
 }
 
 void voxel_octree::set_child(std::size_t x, std::size_t y, std::size_t z, 
