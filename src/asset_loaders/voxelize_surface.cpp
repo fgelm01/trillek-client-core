@@ -22,10 +22,12 @@ public:
             const float scale) : m_mesh_origin(mo), m_voxel_origin(vo), 
             m_scale(scale) {}
     voxel_data::size_vector3d operator ()(const float_vector3d& arg) const {
-        return (m_scale * (arg - m_mesh_origin)) - m_voxel_origin;
+        return voxel_octree::size_vector3d(m_scale * (arg - m_mesh_origin)) - 
+                m_voxel_origin;
     }
     float_vector3d operator ()(const voxel_data::size_vector3d& arg) const {
-        return m_mesh_origin + ((arg + m_voxel_origin) / m_scale);
+        return m_mesh_origin + (float_vector3d(arg + m_voxel_origin) 
+                / m_scale);
     }
     const float_vector3d m_mesh_origin;
     const voxel_data::size_vector3d m_voxel_origin;
@@ -113,22 +115,22 @@ void voxelize_triangles(voxel_octree& output, triangle_reference_vector&
     };
     auto ranges_intersect = [](const float_vector2d& lhs, 
             const float_vector2d& rhs)->bool {
-        return !(lhs.y < rhs.x || rhs.y < lhs.x);
+        static const float ERROR = 0.01;
+        return !(rhs.x - lhs.y > ERROR || lhs.x - rhs.y > ERROR);
+        //return !(lhs.y < rhs.x || rhs.y < lhs.x);
     };
     if(input.empty()) {
         output.set_voxel(voxel(true, false));
         return;
     } else if(output.get_size().x == 1) {
-        std::cerr << "We set a leaf at offset" << 
-                convert.m_voxel_origin << std::endl;
         output.set_voxel(voxel(true, true));
         return;
     }
-    std::cerr << "Output has size " << output.get_size() << std::endl;
-    std::cerr << "Input has size " << input.size() << std::endl;
-    std::cerr << "Extents are from " << 
-            convert(voxel_octree::size_vector3d(0,0,0)) << 
-            " to " << convert(output.get_size()) << std::endl;
+//    std::cerr << "Output has size " << output.get_size() << std::endl;
+//    std::cerr << "Input has size " << input.size() << std::endl;
+//    std::cerr << "Extents are from " << 
+//            convert(voxel_octree::size_vector3d(0,0,0)) << 
+//            " to " << convert(output.get_size()) << std::endl;
     std::array<triangle_reference_vector, 8> child_inputs;
     const std::array<const converter, 8> child_converters = {{
             make_child_convert(0),
@@ -167,14 +169,14 @@ void voxelize_triangles(voxel_octree& output, triangle_reference_vector&
             }
         }
         if(!triangle_used) {
-            std::cerr << "An unused triangle appears!" << 
-                    "\n\t" << triangle[0] <<
-                    "\n\t" << triangle[1] <<
-                    "\n\t" << triangle[2] << std::endl << std::endl;
-            std::cerr << 
-                    "\n\t" << convert(triangle[0]) <<
-                    "\n\t" << convert(triangle[1]) <<
-                    "\n\t" << convert(triangle[2]) << std::endl << std::endl;
+//            std::cerr << "An unused triangle appears!" << 
+//                    "\n\t" << triangle[0] <<
+//                    "\n\t" << triangle[1] <<
+//                    "\n\t" << triangle[2] << std::endl << std::endl;
+//            std::cerr << 
+//                    "\n\t" << convert(triangle[0]) <<
+//                    "\n\t" << convert(triangle[1]) <<
+//                    "\n\t" << convert(triangle[2]) << std::endl << std::endl;
         }
     }
     input.clear();
