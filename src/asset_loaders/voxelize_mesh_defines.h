@@ -17,6 +17,7 @@ typedef vector3d<signed long int> int_vector3d;
 typedef std::array<float_vector3d, 4> float_triangle3d;
 typedef std::array<float_vector2d, 3> float_triangle2d;
 typedef std::vector<float_triangle3d> triangle3d_vector;
+
 }
 
 #endif	/* TRILLEK_VOXELIZE_MESH_DEFINES_H */

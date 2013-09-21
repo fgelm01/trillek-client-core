@@ -242,6 +242,9 @@ template <typename T, typename U>
 bool operator !=(const vector2d<T>& lhs, const vector2d<U>& rhs) {
     return !(lhs == rhs);
 }
+/**
+ * @brief Give vector2 objects a strict weak ordering
+ */
 template <typename T, typename U>
 bool operator <(const vector2d<T>& lhs, const vector2d<U>& rhs) {
     return lhs.x == rhs.x ? lhs.y < rhs.y : lhs.x < rhs.x;
@@ -255,6 +258,9 @@ template <typename T, typename U>
 bool operator !=(const vector3d<T>& lhs, const vector3d<U>& rhs) {
     return !(lhs == rhs);
 }
+/**
+ * @brief Give vector3 objects a strict weak ordering
+ */
 template <typename T, typename U>
 bool operator <(const vector3d<T>& lhs, const vector3d<U>& rhs) {
     return lhs.x == rhs.x ?

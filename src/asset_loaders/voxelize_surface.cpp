@@ -1,7 +1,7 @@
 #include "voxelize_mesh_defines.h"
 #include "voxelize_surface.h"
+#include "voxelize_mesh_utils.h"
 #include <functional>
-#include <array>
 #include <algorithm>
 #include <cassert>
 
@@ -9,13 +9,6 @@ namespace trillek {
 
 typedef std::vector<std::reference_wrapper<const float_triangle3d> >
         triangle_reference_vector;
-
-//float or double or similar
-static const auto MIN_VAL = std::numeric_limits<
-        triangle3d_vector::value_type::value_type::value_type>::min();
-//float or double or similar
-static const auto MAX_VAL = std::numeric_limits<
-        triangle3d_vector::value_type::value_type::value_type>::max();
 
 class converter {
 public:
@@ -49,14 +42,6 @@ void voxelize_triangles_alternate2(voxel_octree& output,
         const std::size_t reclevel = 0);
 
 /**
- * @brief Get the axis aligned bounding box of this triangle
- * @param triangle triangle to analyze
- * @return pair containing too vector3d objects, first having all 
- * minimum coordinates and second having all maximum coordinates
- */
-std::pair<float_vector3d, float_vector3d> triangle_limits(
-        const float_triangle3d& triangle);
-/**
  * @brief test if two ranges overlap
  * @param lhs x is minimum and y is maximum of this range
  * @param rhs x is minimum and y is maximum of this range
@@ -71,12 +56,6 @@ bool ranges_overlap(const float_vector2d& lhs, const float_vector2d& rhs);
  */
 bool ranges_overlap(const std::pair<float, float>& lhs, 
         const std::pair<float, float>& rhs);
-
-bool triangle_in_cube(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max);
-bool triangle_in_cube_alternate(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max);
-void test_triangle_projection(const float_triangle3d& triangle);
 
 voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles, 
         const float voxels_per_unit) {
@@ -110,7 +89,8 @@ voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles,
     }
     //voxelize_triangles(ret, input, convert);
     voxelize_triangles_alternate2(ret, voxel_octree::size_vector3d(0,0,0), 
-            ret.get_size(), min_xyz, max_xyz, input);
+            ret.get_size(), min_xyz, 
+            min_xyz + ret.get_size() / voxels_per_unit, input);
     std::cerr << "Octree nodes: " << ret.get_num_nodes() << std::endl;
     std::cerr << "Octree full volume: " << ret.get_opaque_volume() 
             << std::endl;
@@ -162,7 +142,7 @@ void voxelize_triangles(voxel_octree& output, triangle_reference_vector&
                     voxel_octree::size_vector3d(0,0,0));
             float_vector3d child_max = child_converters[i](
                     half_size);
-            if(triangle_in_cube(triangle, child_min, child_max)) {
+            if(triangle_in_cube1(triangle, child_min, child_max)) {
                 child_inputs[i].push_back(std::ref(triangle));
                 triangle_used = true;
             }
@@ -192,7 +172,7 @@ void voxelize_triangles_alternate(voxel_octree& output,
         const triangle_reference_vector& input) {
     auto relevant_triangle = [&output_min, &output_max](
             const float_triangle3d& arg)->bool {
-        return triangle_in_cube(arg, output_min, output_max);
+        return triangle_in_cube2(arg, output_min, output_max);
     };
     triangle_reference_vector actual_input;
     std::copy_if(input.begin(), input.end(), 
@@ -231,9 +211,11 @@ void voxelize_triangles_alternate2(voxel_octree& output,
         const std::size_t reclevel) {
     auto relevant_triangle = [&output_min, &output_max](
             const float_triangle3d& arg)->bool {
-        return triangle_in_cube_alternate(arg, output_min, output_max);
+        return triangle_in_cube2(arg, output_min, output_max);
     };
     const voxel_octree::size_vector3d delta_size = size_max - size_min;
+    //std::cerr << "Voxel limits " << size_min << ", " << size_max << std::endl;
+    std::cerr << "Voxel magnitude " << size_max - size_min << std::endl;
     triangle_reference_vector actual_input;
     std::copy_if(input.begin(), input.end(), 
             std::back_inserter(actual_input), relevant_triangle);
@@ -242,9 +224,10 @@ void voxelize_triangles_alternate2(voxel_octree& output,
     } else if(delta_size.x == delta_size.y && 
             delta_size.y == delta_size.z && 
             delta_size.z == 1) {
+        //std::cerr << "Leaf has " << actual_input.size() << " tris" << std::endl;
         output.set_voxel(size_min, voxel(true, true));
     } else {
-        const float_vector3d half_real = (output_max - output_min) * 0.5;
+        const float_vector3d half_real = (output_max - output_min) / 2;
         const voxel_octree::size_vector3d half_voxel = delta_size / 2;
         for(std::size_t i = 0; i < 8; ++i) {
             voxel_octree cur_child;
@@ -268,26 +251,7 @@ void voxelize_triangles_alternate2(voxel_octree& output,
     }
 }
 
-std::pair<float_vector3d, float_vector3d> triangle_limits(
-        const float_triangle3d& triangle) {
-    float_vector3d low(MAX_VAL, MAX_VAL, MAX_VAL);
-    float_vector3d high(MIN_VAL, MIN_VAL, MIN_VAL);
-    for(std::size_t i = 0; i < 3; ++i) {
-        low = min_vector(low, triangle[i]);
-        high = max_vector(high, triangle[i]);
-    }
-    return std::make_pair(low, high);
-}
 
-bool ranges_overlap(const float_vector2d& lhs, const float_vector2d& rhs) {
-    return !(lhs.y < rhs.x || rhs.y < lhs.x);
-}
-
-bool ranges_overlap(const std::pair<float, float>& lhs, 
-        const std::pair<float, float>& rhs) {
-    return ranges_overlap(float_vector2d(lhs.first, lhs.second), 
-            float_vector2d(rhs.first, rhs.second));
-}
 
 float_vector2d project_cube_axis(const float_vector3d& cube_min, 
         const float_vector3d& cube_max, const float_vector3d& axis, 
@@ -295,123 +259,6 @@ float_vector2d project_cube_axis(const float_vector3d& cube_min,
 float_vector2d project_triangle_axis(const float_triangle3d& triangle, 
         const float_vector3d& axis, 
         const float_vector3d& origin = float_vector3d());
-
-bool triangle_in_cube(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max) {
-    //compute the limits of the triangle
-    float_vector3d triangle_min, triangle_max;
-    std::tie(triangle_min, triangle_max) = triangle_limits(triangle);
-    //compute the x,y,z axis ranges
-    const float_vector2d tri_x(triangle_min.x, triangle_max.x);
-    const float_vector2d tri_y(triangle_min.y, triangle_max.y);
-    const float_vector2d tri_z(triangle_min.z, triangle_max.z);
-    const float_vector2d box_x(cube_min.x, cube_max.x);
-    const float_vector2d box_y(cube_min.y, cube_max.y);
-    const float_vector2d box_z(cube_min.z, cube_max.z);
-    if(!(ranges_overlap(tri_x, box_x) && ranges_overlap(tri_y, box_y) 
-            && ranges_overlap(tri_z, box_z))) {
-        //std::cerr << "Triangle failure by box" << std::endl;
-        return false;
-    } else {
-        const float_vector2d cube_range = project_cube_axis(cube_min, 
-                cube_max, triangle[3], triangle[0]);
-        const float_vector2d tri_range = project_triangle_axis(triangle, 
-                triangle[3], triangle[0]);
-        if(!ranges_overlap(cube_range, tri_range)) {
-            //std::cerr << "Triangle failure by normal" << std::endl;
-            return false;
-        } else {
-            for(std::size_t i = 0; i < 3; ++i) {
-                std::size_t j = (i + 1) % 3;
-                const float_vector3d axis = (triangle[j] - 
-                        triangle[i]).normalize().cross(triangle[3]);
-                const float_vector2d cube_edge = project_cube_axis(
-                        cube_min, cube_max, axis, triangle[0]);
-                const float_vector2d triangle_edge = project_triangle_axis(
-                        triangle, axis, triangle[0]);
-                if(!ranges_overlap(cube_edge, triangle_edge)) {
-                    //std::cerr << "Triangle failure by edge" << std::endl;
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-}
-
-bool triangle_in_cube_alternate(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max) {
-    test_triangle_projection(triangle);
-    //compute the limits of the triangle
-    float_vector3d triangle_min, triangle_max;
-    std::tie(triangle_min, triangle_max) = triangle_limits(triangle);
-    const std::array<const float_vector3d, 7> axes = {{
-        float_vector3d(1,0,0),
-        float_vector3d(0,1,0),
-        float_vector3d(0,0,1),
-        triangle[3],
-        (triangle[1]-triangle[0]).cross(triangle[3]),
-        (triangle[2]-triangle[1]).cross(triangle[3]),
-        (triangle[0]-triangle[2]).cross(triangle[3])}};
-    const float_vector3d origin = triangle[2];
-    for(const float_vector3d& axis : axes) {
-        const float_vector2d cube_range = project_cube_axis(
-                cube_min, cube_max, axis, origin);
-        const float_vector2d tri_range = project_triangle_axis(
-                triangle, axis, origin);
-        if(!ranges_overlap(cube_range, tri_range))
-            return false;
-    }
-    return true;
-}
-
-float_vector2d project_cube_axis(const float_vector3d& cube_min, 
-        const float_vector3d& cube_max, const float_vector3d& axis, 
-        const float_vector3d& origin) {
-    const float_vector3d cmin = cube_min - origin;
-    const float_vector3d cmax = cube_max - origin;
-    float cube_min_projected = MAX_VAL;
-    float cube_max_projected = MIN_VAL;
-    for(std::size_t i = 0; i < 8; ++i) {        
-        const float_vector3d corner(
-                i & 1 ? cmax.x : cmin.x, 
-                i & 2 ? cmax.y : cmin.y, 
-                i & 4 ? cmax.z : cmin.z);
-        const float corner_project = corner.dot(axis);
-        cube_min_projected = std::min(corner_project, cube_min_projected);
-        cube_max_projected = std::max(corner_project, cube_max_projected);
-    }
-    return float_vector2d(cube_min_projected, cube_max_projected);
-}
-
-float_vector2d project_triangle_axis(const float_triangle3d& triangle, 
-        const float_vector3d& axis, const float_vector3d& origin) {
-    float tri_min_projected = MAX_VAL;
-    float tri_max_projected = MIN_VAL;
-    for(std::size_t i = 0; i < 3; ++i) {        
-        const float_vector3d vert = triangle[i] - origin;
-        const float vert_project = vert.dot(axis);
-        tri_min_projected = std::min(vert_project, tri_min_projected);
-        tri_max_projected = std::max(vert_project, tri_max_projected);
-    }
-    return float_vector2d(tri_min_projected, tri_max_projected);
-}
-
-void test_triangle_projection(const float_triangle3d& triangle) {
-    float_vector3d tri_lo, tri_hi;
-    std::tie(tri_lo, tri_hi) = triangle_limits(triangle);
-    const float_vector2d trix = project_triangle_axis(triangle, 
-        float_vector3d(1,0,0));
-    const float_vector2d triy = project_triangle_axis(triangle, 
-        float_vector3d(0,1,0));
-    const float_vector2d triz = project_triangle_axis(triangle, 
-        float_vector3d(0,0,1));
-    const float_vector2d triax(tri_lo.x, tri_hi.x);
-    const float_vector2d triay(tri_lo.y, tri_hi.y);
-    const float_vector2d triaz(tri_lo.z, tri_hi.z);
-    
-    assert(trix == triax && triy == triay && triz == triaz);
-}
 
 }
 
