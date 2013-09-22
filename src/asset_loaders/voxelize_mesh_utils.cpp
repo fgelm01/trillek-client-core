@@ -4,9 +4,9 @@
 namespace trillek {
 
 const float_vector3d::value_type MIN_VAL = std::numeric_limits<
-        triangle3d_vector::value_type::value_type::value_type>::max();
-const float_vector3d::value_type MAX_VAL = std::numeric_limits<
         triangle3d_vector::value_type::value_type::value_type>::min();
+const float_vector3d::value_type MAX_VAL = std::numeric_limits<
+        triangle3d_vector::value_type::value_type::value_type>::max();
 
 float_vector2d project_cube_axis(const float_vector3d& cube_min, 
         const float_vector3d& cube_max, const float_vector3d& axis, 
@@ -23,6 +23,101 @@ bool point_in_cube(const float_vector3d& point,
             point.x < cube_max.x && 
             point.y < cube_max.y && 
             point.z < cube_max.z);
+}
+
+bool point_in_cube_threshold(const float_vector3d& point, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max, 
+        const float_vector3d::value_type threshold) {
+    auto to_plane = [](const float_vector3d& arg, std::size_t i)
+            ->float_vector2d {
+        switch(i) {
+        case 0:
+            return float_vector2d(arg.x, arg.y);
+            break;
+        case 1:
+            return float_vector2d(arg.y, arg.z);
+            break;
+        case 2:
+            return float_vector2d(arg.z, arg.x);
+            break;
+        default:
+            throw std::logic_error(
+                    "Lambda to_plane should have i value < 3");
+        }
+    };
+    auto to_plane_axis = [](const float_vector3d& arg, std::size_t i)
+            ->float_vector2d::value_type {
+        switch(i) {
+        case 0:
+            return arg.z;
+            break;
+        case 1:
+            return arg.x;
+            break;
+        case 2:
+            return arg.y;
+            break;
+        default:
+            throw std::logic_error(
+                    "Lambda to_plane_axis should have i value < 3");
+        }
+    };
+    const float_vector3d::value_type threshold2 = threshold * threshold;
+    for(std::size_t i = 0; i < 3; ++i) {
+        const float_vector2d min_plane = to_plane(cube_min, i);
+        const float_vector2d max_plane = to_plane(cube_max, i);
+        const float_vector2d point_plane = to_plane(point, i);
+        const float_vector2d::value_type point_axis = 
+                to_plane_axis(point, i);
+        const float_vector2d x_range(min_plane.x, max_plane.x);
+        const float_vector2d y_range(min_plane.y, max_plane.y);
+        const float_vector2d z_range(to_plane_axis(cube_min, i), 
+                to_plane_axis(cube_max, i));
+        const float_vector2d point_x_range(point_plane.x, point_plane.x);
+        const float_vector2d point_y_range(point_plane.y, point_plane.y);
+        const float_vector2d point_z_range(point_axis, point_axis);
+        /*
+         * Check if along two axes the point falls inside the cube
+         * and along the third it is within the threshold distance 
+         * to the faces perpendicular to that plane
+         */
+        if(ranges_overlap(point_x_range, x_range) && 
+                ranges_overlap(point_y_range, y_range) && 
+                -threshold < range_overlap_dinstance(point_z_range, z_range)) {
+            return true;
+        }
+        const float_vector2d::value_type x_distance = std::min(
+                float_vector2d::value_type(0), 
+                range_overlap_dinstance(point_x_range, x_range));
+        const float_vector2d::value_type y_distance = std::min(
+                float_vector2d::value_type(0), 
+                range_overlap_dinstance(point_y_range, y_range));
+        const float_vector2d::value_type xy_squared_magnitude = 
+                x_distance * x_distance + y_distance * y_distance;
+        /*
+         * Check if along the third axis the point falls inside the cube
+         * and along the other two, it is within the threshold distance 
+         * to an edge
+         */
+        if(ranges_overlap(point_z_range, z_range) && 
+                xy_squared_magnitude < threshold2) {
+            return true;
+        }
+    }
+    /*
+     * Check if the point is within threshold distance to corner
+     */
+    for(std::size_t i = 0; i < 8; ++i) {
+        const float_vector3d corner = float_vector3d(
+                i & 1 ? cube_max.x : cube_min.x, 
+                i & 2 ? cube_max.y : cube_min.y, 
+                i & 4 ? cube_max.z : cube_min.z);
+        const float_vector3d offset = point - corner;
+        if(offset.squared_magnitude() < threshold2) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool triangle_in_cube1(const float_triangle3d& triangle, 
@@ -109,6 +204,12 @@ bool triangle_in_cube2(const float_triangle3d& triangle,
 bool triangle_in_cube_threshold1(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold) {
+    for(std::size_t i = 0; i < 3; ++i) {
+        if(point_in_cube_threshold(triangle[i], cube_min, cube_max, 
+                threshold)) {
+            return true;
+        }
+    }
     return false;
 }
 

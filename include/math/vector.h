@@ -60,8 +60,11 @@ struct vector3d
             const vector3d<U>& other) const {
         return (x * other.x) + (y * other.y) + (z * other.z);
     }
-    float length() const {
-        return std::sqrt(x * x + y * y + z * z);
+    value_type squared_magnitude() const {
+        return x * x + y * y + z * z;
+    }
+    value_type length() const {
+        return std::sqrt(squared_magnitude());
     }
     vector3d<T> normalize() const {
         float length=this->length();

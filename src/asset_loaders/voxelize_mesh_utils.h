@@ -41,8 +41,17 @@ bool ranges_overlap(const std::pair<float, float>& lhs,
  */
 float_vector2d::value_type range_overlap_dinstance(const float_vector2d& lhs, 
         const float_vector2d& rhs);
+/**
+ * @brief Test if the point falls strictly inside the cube
+ */
 bool point_in_cube(const float_vector3d& point, 
         const float_vector3d& cube_min, const float_vector3d& cube_max);
+/**
+ * @brief Test if the point is within a certain distance of the cube
+ */
+bool point_in_cube_threshold(const float_vector3d& point, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max, 
+        const float_vector3d::value_type threshold);
 /**
  * Tell if a triangle overlaps the cube
  * @param triangle triangle vertices and normal
