@@ -42,6 +42,11 @@ bool ranges_overlap(const std::pair<float, float>& lhs,
 float_vector2d::value_type range_overlap_dinstance(const float_vector2d& lhs, 
         const float_vector2d& rhs);
 /**
+ * @brief Test if the point falls strictly inside the square
+ */
+bool point_in_square(const float_vector2d& point, 
+        const float_vector2d& square_min, const float_vector2d& square_max);
+/**
  * @brief Test if the point falls strictly inside the cube
  */
 bool point_in_cube(const float_vector3d& point, 
@@ -52,6 +57,13 @@ bool point_in_cube(const float_vector3d& point,
 bool point_in_cube_threshold(const float_vector3d& point, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold);
+/**
+ * @brief Test if the line overlaps the cube
+ * Uses point_in_cube on the end points
+ */
+bool line_in_cube(const float_vector3d& line_a, 
+        const float_vector3d& line_b, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max);
 /**
  * Tell if a triangle overlaps the cube
  * @param triangle triangle vertices and normal
@@ -78,6 +90,16 @@ bool triangle_in_cube1(const float_triangle3d& triangle,
  * Triangle edge perpendicular
  */
 bool triangle_in_cube2(const float_triangle3d& triangle, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max);
+/**
+ * Tell if a triangle overlaps the cube
+ * @param triangle triangle vertices and normal
+ * @param cube_min cube minimum coordinate
+ * @param cube_max cube maximum coordinate
+ * @return whether they overlap
+ * Actually tests the edges of the triangle only
+ */
+bool triangle_in_cube3(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max);
 /**
  * Tell if a triangle overlaps the cube

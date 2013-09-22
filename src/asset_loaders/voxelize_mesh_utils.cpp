@@ -14,6 +14,16 @@ float_vector2d project_cube_axis(const float_vector3d& cube_min,
 float_vector2d project_triangle_axis(const float_triangle3d& triangle, 
         const float_vector3d& axis, 
         const float_vector3d& origin = float_vector3d());
+float_vector2d to_plane(const float_vector3d& arg, std::size_t);
+float_vector2d::value_type to_axis(const float_vector3d& arg, std::size_t);
+
+bool point_in_square(const float_vector2d& point, 
+        const float_vector2d& square_min, const float_vector2d& square_max) {
+    return (square_min.x < point.x && 
+            square_min.y < point.y && 
+            point.x < square_max.x && 
+            point.y < square_max.y);
+}
 
 bool point_in_cube(const float_vector3d& point, 
         const float_vector3d& cube_min, const float_vector3d& cube_max) {
@@ -25,54 +35,62 @@ bool point_in_cube(const float_vector3d& point,
             point.z < cube_max.z);
 }
 
+bool line_in_cube(const float_vector3d& line_a, 
+        const float_vector3d& line_b, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max) {
+    /*
+     * Test if either end point falls inside the cube
+     */
+    if(point_in_cube(line_a, cube_min, cube_max) || 
+            point_in_cube(line_b, cube_min, cube_max)) {
+        return true;
+    }
+    for(std::size_t i = 0; i < 3; ++i) {
+        const float_vector2d min_plane = to_plane(cube_min, i);
+        const float_vector2d max_plane = to_plane(cube_max, i);
+        const float_vector2d a_plane = to_plane(line_a, i);
+        const float_vector2d b_plane = to_plane(line_b, i);
+        const float_vector2d::value_type min_axis = to_axis(cube_min, i);
+        const float_vector2d::value_type max_axis = to_axis(cube_max, i);
+        const float_vector2d::value_type a_axis = to_axis(line_a, i);
+        const float_vector2d::value_type b_axis = to_axis(line_b, i);
+        const float_vector2d line_z_range(
+                std::min(a_axis, b_axis), 
+                std::max(a_axis, b_axis));
+        const std::array<const float_vector2d::value_type, 2> axis_points = 
+                {{min_axis, max_axis}};
+        //test if the line intersects these faces
+        for(const float_vector2d::value_type axis_point : axis_points) {
+            const float_vector2d axis_range(axis_point, axis_point);
+            if(!ranges_overlap(line_z_range, axis_range)) {
+                continue;
+            }
+            const float_vector2d::value_type ratio = (axis_point - a_axis) / 
+                    (b_axis - a_axis);
+            const float_vector2d plane_point = a_plane + ratio * 
+                    (b_plane - a_plane);
+            if(point_in_square(plane_point, min_plane, max_plane)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool point_in_cube_threshold(const float_vector3d& point, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold) {
-    auto to_plane = [](const float_vector3d& arg, std::size_t i)
-            ->float_vector2d {
-        switch(i) {
-        case 0:
-            return float_vector2d(arg.x, arg.y);
-            break;
-        case 1:
-            return float_vector2d(arg.y, arg.z);
-            break;
-        case 2:
-            return float_vector2d(arg.z, arg.x);
-            break;
-        default:
-            throw std::logic_error(
-                    "Lambda to_plane should have i value < 3");
-        }
-    };
-    auto to_plane_axis = [](const float_vector3d& arg, std::size_t i)
-            ->float_vector2d::value_type {
-        switch(i) {
-        case 0:
-            return arg.z;
-            break;
-        case 1:
-            return arg.x;
-            break;
-        case 2:
-            return arg.y;
-            break;
-        default:
-            throw std::logic_error(
-                    "Lambda to_plane_axis should have i value < 3");
-        }
-    };
     const float_vector3d::value_type threshold2 = threshold * threshold;
     for(std::size_t i = 0; i < 3; ++i) {
         const float_vector2d min_plane = to_plane(cube_min, i);
         const float_vector2d max_plane = to_plane(cube_max, i);
         const float_vector2d point_plane = to_plane(point, i);
         const float_vector2d::value_type point_axis = 
-                to_plane_axis(point, i);
+                to_axis(point, i);
         const float_vector2d x_range(min_plane.x, max_plane.x);
         const float_vector2d y_range(min_plane.y, max_plane.y);
-        const float_vector2d z_range(to_plane_axis(cube_min, i), 
-                to_plane_axis(cube_max, i));
+        const float_vector2d z_range(to_axis(cube_min, i), 
+                to_axis(cube_max, i));
         const float_vector2d point_x_range(point_plane.x, point_plane.x);
         const float_vector2d point_y_range(point_plane.y, point_plane.y);
         const float_vector2d point_z_range(point_axis, point_axis);
@@ -201,6 +219,17 @@ bool triangle_in_cube2(const float_triangle3d& triangle,
     return true;
 }
 
+bool triangle_in_cube3(const float_triangle3d& triangle, 
+        const float_vector3d& cube_min, const float_vector3d& cube_max) {
+    for(std::size_t i = 0; i < 3; ++i) {
+        const std::size_t j = (i + 1) % 3;
+        if(line_in_cube(triangle[i], triangle[j], cube_min, cube_max)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool triangle_in_cube_threshold1(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold) {
@@ -278,6 +307,40 @@ std::pair<float_vector3d, float_vector3d> triangle_limits(
     }
     return std::make_pair(low, high);
 }
+
+float_vector2d to_plane(const float_vector3d& arg, std::size_t i) {
+    switch(i) {
+    case 0:
+        return float_vector2d(arg.x, arg.y);
+        break;
+    case 1:
+        return float_vector2d(arg.y, arg.z);
+        break;
+    case 2:
+        return float_vector2d(arg.z, arg.x);
+        break;
+    default:
+        throw std::logic_error(
+                "Lambda to_plane should have i value < 3");
+    }
+};
+
+float_vector2d::value_type to_axis(const float_vector3d& arg, std::size_t i) {
+    switch(i) {
+    case 0:
+        return arg.z;
+        break;
+    case 1:
+        return arg.x;
+        break;
+    case 2:
+        return arg.y;
+        break;
+    default:
+        throw std::logic_error(
+                "Lambda to_plane_axis should have i value < 3");
+    }
+};
 
 
 }

@@ -67,6 +67,9 @@ bool ranges_overlap(const std::pair<float, float>& lhs,
 
 voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles, 
         const float voxels_per_unit) {
+    const std::size_t threshold_voxels = 1;
+    const float_vector3d::value_type threshold_units = 
+            (1 + threshold_voxels) / voxels_per_unit;
     float_vector3d min_xyz(MAX_VAL, MAX_VAL, MAX_VAL);
     float_vector3d max_xyz(MIN_VAL, MIN_VAL, MIN_VAL);
     for(const float_triangle3d& triangle : all_triangles) {
@@ -81,13 +84,13 @@ voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles,
         }
     }
     min_xyz -= make_vector3d(voxels_per_unit, 
-            voxels_per_unit, voxels_per_unit);
+            voxels_per_unit, voxels_per_unit) * (threshold_units);
     max_xyz += make_vector3d(voxels_per_unit, 
-            voxels_per_unit, voxels_per_unit);
+            voxels_per_unit, voxels_per_unit) * (threshold_units);
     converter convert(min_xyz, voxel_octree::size_vector3d(0,0,0), 
             voxels_per_unit);
     voxel_octree::size_vector3d msize = convert(max_xyz) + 
-            make_vector3d(1,1,1);
+            make_vector3d(1,1,1) * (1 + threshold_voxels);
     voxel_octree ret;
     ret.reserve_space(msize);
     std::cerr << "Input size: " << msize << std::endl;
@@ -100,9 +103,14 @@ voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles,
     voxelize_triangles_alternate3(ret, voxel_octree::size_vector3d(0,0,0), 
             ret.get_size(), min_xyz, 
             min_xyz + ret.get_size() / voxels_per_unit, 
-            input, 1.0 / voxels_per_unit);
-    std::cerr << "Octree nodes: " << ret.get_num_nodes() << std::endl;
-    std::cerr << "Octree full volume: " << ret.get_opaque_volume() 
+            input, threshold_units);
+    const std::size_t tree_nodes = ret.get_num_nodes();
+    const std::size_t tree_volume = ret.get_opaque_volume();
+    const float ratio = float(tree_nodes) / tree_volume;
+    std::cerr << "Octree nodes:  " << tree_nodes << std::endl;
+    std::cerr << "Octree volume: " << tree_volume << std::endl;
+    std::cerr << "Compression:   " << ratio << std::endl;
+    std::cerr << "Compression less than 1.0 is good. Greater is bad" 
             << std::endl;
     return ret;
 }
@@ -269,8 +277,8 @@ void voxelize_triangles_alternate3(voxel_octree& output,
         const std::size_t reclevel) {
     auto relevant_triangle = [&output_min, &output_max, &threshold](
             const float_triangle3d& arg)->bool {
-        return triangle_in_cube_threshold1(arg, output_min, output_max, 
-                threshold);
+        //triangle_in_cube_threshold1(arg, output_min, output_max, threshold);
+        return triangle_in_cube3(arg, output_min, output_max);
     };
     const voxel_octree::size_vector3d delta_size = size_max - size_min;
     triangle_reference_vector actual_input;
