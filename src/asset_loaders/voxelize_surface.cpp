@@ -277,8 +277,9 @@ void voxelize_triangles_alternate3(voxel_octree& output,
         const std::size_t reclevel) {
     auto relevant_triangle = [&output_min, &output_max, &threshold](
             const float_triangle3d& arg)->bool {
-        //triangle_in_cube_threshold1(arg, output_min, output_max, threshold);
-        return triangle_in_cube3(arg, output_min, output_max);
+        return triangle_in_cube_threshold1(arg, output_min, 
+                output_max, threshold);
+        //return triangle_in_cube3(arg, output_min, output_max);
     };
     const voxel_octree::size_vector3d delta_size = size_max - size_min;
     triangle_reference_vector actual_input;

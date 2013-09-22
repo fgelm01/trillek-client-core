@@ -36,6 +36,21 @@ public:
             const vector2d<U>& other) const {
         return x * other.y - y * other.x;
     }
+    template <typename U>
+    decltype(std::declval<value_type>() * std::declval<U>()) dot(
+            const vector2d<U>& other) const {
+        return x * other.x + y * other.y;
+    }
+    value_type squared_magnitude() const {
+        return x * x + y * y;
+    }
+    value_type length () const {
+        return std::sqrt(squared_magnitude());
+    }
+    vector2d<value_type> normalize() const {
+        const value_type my_length = length();
+        return vector2d<value_type>(x / my_length, y / my_length);
+    }
 };
 
 template<typename T>
@@ -66,13 +81,13 @@ struct vector3d
     value_type length() const {
         return std::sqrt(squared_magnitude());
     }
-    vector3d<T> normalize() const {
-        float length=this->length();
-        return vector3d<T>( this->x/length,
-                            this->y/length,
-                            this->z/length);
+    vector3d<value_type> normalize() const {
+        const value_type my_length = length();
+        return vector3d<value_type>( this->x/my_length,
+                            this->y/my_length,
+                            this->z/my_length);
     }
-    vector2d<T> to_vector2d() const {
+    vector2d<value_type> to_vector2d() const {
         return make_vector2d(x, y);
     }
 };
