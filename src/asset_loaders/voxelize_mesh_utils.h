@@ -113,6 +113,14 @@ bool line_in_cube_threshold(
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold);
 /**
+ * @brief Test if the point is within a certain distance of the triangle
+ * Threshold is only along the triangle's normal. Projected onto the surface,
+ * the point must be completely inside the triangle
+ */
+bool point_in_triangle_threshold(
+        const float_vector3d& point, const float_triangle3d& triangle, 
+        const float_vector3d::value_type threshold);
+/**
  * Tell if a triangle overlaps the cube
  * @param triangle triangle vertices and normal
  * @param cube_min cube minimum coordinate

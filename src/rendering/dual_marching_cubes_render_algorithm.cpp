@@ -37,9 +37,9 @@ std::size_t process_dual_cell_box(std::size_t cube_num,
                             T... n)
 {
     float size=1.0f;
-    static_assert(are_same<voxel_data*,T..>::value,
-        "Tried to call process_duall_cell_box with a \
-        type other then voxel_octree*");
+//    static_assert(are_same<voxel_data*,T...>::value,
+//        "Tried to call process_duall_cell_box with a "
+//        "type other then voxel_octree*");
     std::size_t min_size=min((n?n->get_size().x:2000)...);
     if(min_size>size)
     {

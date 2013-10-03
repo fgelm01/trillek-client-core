@@ -149,6 +149,41 @@ bool line_in_cube_threshold(
     return false;
 }
 
+bool point_in_triangle_threshold(
+        const float_vector3d& point, const float_triangle3d& triangle, 
+        const float_vector3d::value_type threshold) {
+    const float_vector3d origin = triangle[0];
+    const float_vector3d z_axis = triangle[3];
+    const float_vector3d x_axis = (triangle[1] - triangle[0]).normalize();
+    const float_vector3d y_axis = z_axis.cross(x_axis);
+    const float_triangle2d triangle_transformed = 
+            {{float_vector2d(
+                    (triangle[0] - origin).dot(x_axis),
+                    (triangle[0] - origin).dot(y_axis)), 
+              float_vector2d(
+                    (triangle[1] - origin).dot(x_axis),
+                    (triangle[1] - origin).dot(y_axis)), 
+              float_vector2d(
+                    (triangle[2] - origin).dot(x_axis),
+                    (triangle[2] - origin).dot(y_axis))}};
+    const float_vector2d point_transformed(
+            (point - origin).dot(x_axis), 
+            (point - origin).dot(y_axis));
+    //determine if the point is inside the 2d triangle
+    for(std::size_t i = 0; i < 3; ++i) {
+        const std::size_t j = (i + 1) % 3;
+        float_vector2d edge = triangle_transformed[j] - 
+                triangle_transformed[i];
+        const float_vector2d::value_type cross_value = edge.cross(
+                point_transformed - triangle_transformed[i]);
+        if(cross_value < 0) {
+            return false;
+        }
+    }
+    const float_vector3d::value_type point_z = (point - origin).dot(z_axis);
+    return std::abs(point_z) < threshold;
+}
+
 bool point_in_cube_threshold(const float_vector3d& point, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold) {
@@ -309,6 +344,15 @@ bool triangle_in_cube_threshold1(const float_triangle3d& triangle,
         std::size_t j = (i + 1) % 3;
         if(line_in_cube_threshold(triangle[i], triangle[j], 
                 cube_min, cube_max, threshold)) {
+            return true;
+        }
+    }
+    for(std::size_t i = 0; i < 8; ++i) {
+        const float_vector3d corner(
+                i & 1 ? cube_max.x : cube_min.x, 
+                i & 2 ? cube_max.y : cube_min.y, 
+                i & 4 ? cube_max.z : cube_min.z);
+        if(point_in_triangle_threshold(corner, triangle, threshold)) {
             return true;
         }
     }
@@ -531,7 +575,7 @@ float_vector2d to_plane(const float_vector3d& arg, std::size_t i) {
         break;
     default:
         throw std::logic_error(
-                "Lambda to_plane should have i value < 3");
+                "Function to_plane should have i value < 3");
     }
 };
 
@@ -548,7 +592,7 @@ float_vector2d::value_type to_axis(const float_vector3d& arg, std::size_t i) {
         break;
     default:
         throw std::logic_error(
-                "Lambda to_plane_axis should have i value < 3");
+                "Function to_axis should have i value < 3");
     }
 };
 
