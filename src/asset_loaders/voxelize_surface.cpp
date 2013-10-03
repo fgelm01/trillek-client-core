@@ -4,6 +4,7 @@
 #include <functional>
 #include <algorithm>
 #include <cassert>
+#include <omp.h>
 
 namespace trillek {
 
@@ -118,7 +119,8 @@ voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles,
 void voxelize_triangles(voxel_octree& output, triangle_reference_vector& 
         input, const converter& convert) {
     const voxel_octree::size_vector3d half_size = output.get_size() / 2;
-    auto make_child_convert = [half_size, &convert](std::size_t n)->converter {
+    auto make_child_convert = [half_size, &convert](
+            std::size_t n)->trillek::converter {
         const voxel_octree::size_vector3d child_offset(
                 n & 0x1 ? half_size.x : 0, 
                 n & 0x2 ? half_size.y : 0, 
@@ -290,11 +292,14 @@ void voxelize_triangles_alternate3(voxel_octree& output,
     } else if(delta_size.x == delta_size.y && 
             delta_size.y == delta_size.z && 
             delta_size.z == 1) {
+#pragma omp critical(voxelize_triangles_crit)
         output.set_voxel(size_min, voxel(true, true));
     } else {
         const float_vector3d half_real = (output_max - output_min) / 2;
         const voxel_octree::size_vector3d half_voxel = delta_size / 2;
-        for(std::size_t i = 0; i < 8; ++i) {
+        auto for_loop_impl = [&half_real, &half_voxel, &actual_input, 
+                &output, &output_min, &size_min, 
+                threshold, reclevel](const std::size_t i)->void {
             const float_vector3d child_min = output_min + 
                     float_vector3d(i & 1 ? half_real.x : 0.f,
                                    i & 2 ? half_real.y : 0.f, 
@@ -310,6 +315,19 @@ void voxelize_triangles_alternate3(voxel_octree& output,
             voxelize_triangles_alternate3(output, child_voxel_min, 
                     child_voxel_max, child_min, child_max, actual_input, 
                     threshold, reclevel + 1);
+        };
+        if(reclevel < 2) {
+#pragma omp parallel default(shared)
+            {
+#pragma omp for schedule(auto)
+                for(std::size_t i = 0; i < 8; ++i) {
+                    for_loop_impl(i);
+                }
+            }
+        } else {
+            for(std::size_t i = 0; i < 8; ++i) {
+                for_loop_impl(i);
+            }
         }
     }
 }
