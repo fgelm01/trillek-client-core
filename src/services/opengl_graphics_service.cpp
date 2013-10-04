@@ -218,6 +218,8 @@ void opengl_graphics_service::register_model(uintptr_t ID,
     glNormalPointer(GL_FLOAT, sizeof(vertex_data), (void*)12);
 
     this->model_recall_buffer[ID] = recall_data;
+    std::cerr << "I register object " << ID << " with " <<
+            recall_data.size << " elements" << std::endl;
 }
 
 bool opengl_graphics_service::is_model_registered(uintptr_t ID)

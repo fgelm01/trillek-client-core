@@ -14,8 +14,9 @@
 
 int main(int argc, char **argv)
 {
-    omp_set_dynamic(1);
     omp_set_nested(1);
+    omp_set_num_threads(omp_get_num_procs());
+    omp_set_dynamic(0);
     trillek::client client;
 
     // Some test-code to load/create something to test the rendering with

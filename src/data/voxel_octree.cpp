@@ -61,7 +61,18 @@ std::size_t voxel_octree::get_opaque_volume() const {
     }
     return ret;
 }
-
+std::size_t voxel_octree::get_height() const {
+    if(_has_children) {
+        std::size_t ret = 0;
+        for(const voxel_octree_ptr& child : _children) {
+            const voxel_octree* child_ptr = child.get();
+            ret = std::max(ret, child_ptr->get_height());
+        }
+        return ret + 1;
+    } else {
+        return 0;
+    }
+}
 const voxel& voxel_octree::get_voxel() const
 {
     assert(!_has_children);

@@ -59,6 +59,11 @@ public:
      */
     std::size_t get_opaque_volume() const;
     /**
+     * @brief Get the height from here to the deepest child
+     * A node with no children has height 0
+     */
+    std::size_t get_height() const;
+    /**
      * @brief Become at least as large as x,y,z
      * Final size is smallest power-of-two cube larger than
      * the maximum of x,y,z.

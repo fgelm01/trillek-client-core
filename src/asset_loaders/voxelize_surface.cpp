@@ -107,9 +107,11 @@ voxel_octree voxelize_mesh_surface(const triangle3d_vector& all_triangles,
             input, threshold_units);
     const std::size_t tree_nodes = ret.get_num_nodes();
     const std::size_t tree_volume = ret.get_opaque_volume();
+    const std::size_t tree_height = ret.get_height();
     const float ratio = float(tree_nodes) / tree_volume;
     std::cerr << "Octree nodes:  " << tree_nodes << std::endl;
     std::cerr << "Octree volume: " << tree_volume << std::endl;
+    std::cerr << "Octree height: " << tree_height << std::endl;
     std::cerr << "Compression:   " << ratio << std::endl;
     std::cerr << "Compression less than 1.0 is good. Greater is bad" 
             << std::endl;
@@ -316,7 +318,7 @@ void voxelize_triangles_alternate3(voxel_octree& output,
                     child_voxel_max, child_min, child_max, actual_input, 
                     threshold, reclevel + 1);
         };
-        if(reclevel < 2) {
+        if(actual_input.size() > 512) {
 #pragma omp parallel default(shared)
             {
 #pragma omp for schedule(auto)
