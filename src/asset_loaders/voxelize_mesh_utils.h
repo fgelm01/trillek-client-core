@@ -121,6 +121,12 @@ bool point_in_triangle_threshold(
         const float_vector3d& point, const float_triangle3d& triangle, 
         const float_vector3d::value_type threshold);
 /**
+ * @brief Determine whether a line crosses a triangle
+ */
+bool line_in_triangle_threshold(
+        const float_vector3d& line_a, const float_vector3d& line_b, 
+        const float_triangle3d& triangle);
+/**
  * @brief Test if a line crosses a triangle within a threshold
  * Threshold mostly applies to end points along the triangle normal
  */
@@ -134,36 +140,9 @@ bool line_in_triangle_threshold(
  * @param cube_min cube minimum coordinate
  * @param cube_max cube maximum coordinate
  * @return whether they overlap
- * Explicitly tests the canonical axes, the triangle normal, 
- * and the edge perpendicular axes.
+ * All tests are strict
  */
-bool triangle_in_cube1(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max);
-/**
- * Tell if a triangle overlaps the cube
- * @param triangle triangle vertices and normal
- * @param cube_min cube minimum coordinate
- * @param cube_max cube maximum coordinate
- * @return whether they overlap
- * Applies separating axes theorem to a long list of axes:
- * Three canonical axes
- * Combinations of two canonical axes
- * Combinations of three canonical axes
- * Triangle normal
- * Triangle edge parallel
- * Triangle edge perpendicular
- */
-bool triangle_in_cube2(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max);
-/**
- * Tell if a triangle overlaps the cube
- * @param triangle triangle vertices and normal
- * @param cube_min cube minimum coordinate
- * @param cube_max cube maximum coordinate
- * @return whether they overlap
- * Actually tests the edges of the triangle only
- */
-bool triangle_in_cube3(const float_triangle3d& triangle, 
+bool triangle_in_cube(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max);
 /**
  * Tell if a triangle overlaps the cube
@@ -175,7 +154,7 @@ bool triangle_in_cube3(const float_triangle3d& triangle,
  * Uses distance tests to check if the minimal distance between the 
  * triangle and the edge of the cube falls below a threshold
  */
-bool triangle_in_cube_threshold1(const float_triangle3d& triangle, 
+bool triangle_in_cube_threshold(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold);
 

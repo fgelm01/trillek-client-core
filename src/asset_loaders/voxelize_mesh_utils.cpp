@@ -200,6 +200,74 @@ bool point_in_triangle_threshold(
     return std::abs(point_z) < threshold;
 }
 
+bool line_in_triangle(
+        const float_vector3d& line_a, const float_vector3d& line_b, 
+        const float_triangle3d& triangle) {
+    auto select_y = [&triangle]()->trillek::float_vector3d {
+        std::size_t best_base = 0;
+        float_vector3d::value_type best_length = 
+                std::numeric_limits<float_vector3d::value_type>::min();
+        for(std::size_t i = 0; i < 3; ++i) {
+            const std::size_t j = (i + 1) % 3;
+            const float_vector3d::value_type length = 
+                    (triangle[j] - triangle[i]).squared_magnitude();
+            if(length > best_length) {
+                best_base = i;
+                best_length = length;
+            }
+        }
+        const std::size_t best_other = (best_base + 1) % 3;
+        return (triangle[best_other] - triangle[best_base]).normalize();
+    };
+    const float_vector3d origin = triangle[0];
+    const float_vector3d z_axis = triangle[3];
+    const float_vector3d x_axis = select_y();
+    const float_vector3d y_axis = z_axis.cross(x_axis);
+    const float_triangle2d triangle_transformed = 
+            {{float_vector2d(
+                    (triangle[0] - origin).dot(x_axis),
+                    (triangle[0] - origin).dot(y_axis)), 
+              float_vector2d(
+                    (triangle[1] - origin).dot(x_axis),
+                    (triangle[1] - origin).dot(y_axis)), 
+              float_vector2d(
+                    (triangle[2] - origin).dot(x_axis),
+                    (triangle[2] - origin).dot(y_axis))}};
+    const float_vector2d line_a_transformed(
+            (line_a - origin).dot(x_axis), 
+            (line_a - origin).dot(y_axis));
+    const float_vector2d line_b_transformed(
+            (line_b - origin).dot(x_axis), 
+            (line_b - origin).dot(y_axis));
+    const float_vector3d::value_type line_a_z = (line_a - origin).dot(z_axis);
+    const float_vector3d::value_type line_b_z = (line_b - origin).dot(z_axis);
+    auto perform_test = [&triangle_transformed](
+            const float_vector2d& point)->bool {
+        for(std::size_t i = 0; i < 3; ++i) {
+            const std::size_t j = (i + 1) % 3;
+            float_vector2d edge = triangle_transformed[j] - 
+                    triangle_transformed[i];
+            const float_vector2d::value_type cross_value = edge.cross(
+                    point - triangle_transformed[i]);
+            if(cross_value < 0) {
+                return false;
+            }
+        }
+        return true;
+    };
+    if(std::min(line_a_z, line_b_z) < 0 && 
+            std::max(line_a_z, line_b_z) > 0) {
+        const float_vector3d::value_type intersect_ratio = 
+                (0 - line_a_z) / (line_b_z - line_a_z);
+        const float_vector2d intersect_point = line_a_transformed + 
+                intersect_ratio * (line_b_transformed - 
+                line_a_transformed);
+        return perform_test(intersect_point);
+    } else {
+        return false;
+    }
+}
+
 bool line_in_triangle_threshold(
         const float_vector3d& line_a, const float_vector3d& line_b, 
         const float_triangle3d& triangle, 
@@ -332,99 +400,42 @@ bool point_in_cube_threshold(const float_vector3d& point,
     return false;
 }
 
-bool triangle_in_cube1(const float_triangle3d& triangle, 
+bool triangle_in_cube(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max) {
-    //compute the limits of the triangle
-    float_vector3d triangle_min, triangle_max;
-    std::tie(triangle_min, triangle_max) = triangle_limits(triangle);
-    //compute the x,y,z axis ranges
-    const float_vector2d tri_x(triangle_min.x, triangle_max.x);
-    const float_vector2d tri_y(triangle_min.y, triangle_max.y);
-    const float_vector2d tri_z(triangle_min.z, triangle_max.z);
-    const float_vector2d box_x(cube_min.x, cube_max.x);
-    const float_vector2d box_y(cube_min.y, cube_max.y);
-    const float_vector2d box_z(cube_min.z, cube_max.z);
-    if(!(ranges_overlap(tri_x, box_x) && ranges_overlap(tri_y, box_y) 
-            && ranges_overlap(tri_z, box_z))) {
-        //std::cerr << "Triangle failure by box" << std::endl;
-        return false;
-    } else {
-        const float_vector2d cube_range = project_cube_axis(cube_min, 
-                cube_max, triangle[3], triangle[0]);
-        const float_vector2d tri_range = project_triangle_axis(triangle, 
-                triangle[3], triangle[0]);
-        if(!ranges_overlap(cube_range, tri_range)) {
-            //std::cerr << "Triangle failure by normal" << std::endl;
-            return false;
-        } else {
-            for(std::size_t i = 0; i < 3; ++i) {
-                std::size_t j = (i + 1) % 3;
-                const float_vector3d axis = (triangle[j] - 
-                        triangle[i]).normalize().cross(triangle[3]);
-                const float_vector2d cube_edge = project_cube_axis(
-                        cube_min, cube_max, axis, triangle[0]);
-                const float_vector2d triangle_edge = project_triangle_axis(
-                        triangle, axis, triangle[0]);
-                if(!ranges_overlap(cube_edge, triangle_edge)) {
-                    //std::cerr << "Triangle failure by edge" << std::endl;
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-}
-
-bool triangle_in_cube2(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max) {
-    //compute the limits of the triangle
-    float_vector3d triangle_min, triangle_max;
-    std::tie(triangle_min, triangle_max) = triangle_limits(triangle);
-    const std::array<const float_vector3d, 20> axes = {{
-        float_vector3d(1,0,0),
-        float_vector3d(0,1,0),
-        float_vector3d(0,0,1),
-        float_vector3d(1,1,0),
-        float_vector3d(1,-1,0),
-        float_vector3d(0,1,1),
-        float_vector3d(0,1,-1),
-        float_vector3d(1,0,1),
-        float_vector3d(-1,0,1),
-        float_vector3d(1,1,1),
-        float_vector3d(-1,1,1),
-        float_vector3d(1,-1,1),
-        float_vector3d(1,1,-1),
-        triangle[3],
-        (triangle[1]-triangle[0]),
-        (triangle[2]-triangle[1]),
-        (triangle[0]-triangle[2]),
-        (triangle[1]-triangle[0]).cross(triangle[3]),
-        (triangle[2]-triangle[1]).cross(triangle[3]),
-        (triangle[0]-triangle[2]).cross(triangle[3])}};
-    const float_vector3d origin;
-    for(const float_vector3d& axis : axes) {
-        const float_vector2d cube_range = project_cube_axis(
-                cube_min, cube_max, axis, origin);
-        const float_vector2d tri_range = project_triangle_axis(
-                triangle, axis, origin);
-        if(!ranges_overlap(cube_range, tri_range))
-            return false;
-    }
-    return true;
-}
-
-bool triangle_in_cube3(const float_triangle3d& triangle, 
-        const float_vector3d& cube_min, const float_vector3d& cube_max) {
+    auto make_corner = [&cube_min, cube_max](
+            const std::size_t i)->trillek::float_vector3d {
+        return float_vector3d(
+                i & 1 ? cube_max.x : cube_min.x, 
+                i & 2 ? cube_max.y : cube_min.y, 
+                i & 4 ? cube_max.z : cube_min.z);
+    };
+    //this piece checks the edges of the triangle against the cube
     for(std::size_t i = 0; i < 3; ++i) {
         const std::size_t j = (i + 1) % 3;
         if(line_in_cube(triangle[i], triangle[j], cube_min, cube_max)) {
             return true;
         }
     }
+    //this piece checks the edges of the cube against the triangle
+    for(std::size_t i = 0; i < 8; ++i) {
+        const float_vector3d corner = make_corner(i);
+        for(std::size_t shift = 0; shift < 3; ++shift) {
+            const std::size_t shift_mask = 1 << shift;
+            if(i & shift_mask) {
+                continue;
+            }
+            const std::size_t j = i | shift_mask;
+            const float_vector3d corner2 = make_corner(j);
+            if(line_in_triangle(corner, corner2, 
+                    triangle)) {
+                return true;
+            }
+        }
+    }
     return false;
 }
 
-bool triangle_in_cube_threshold1(const float_triangle3d& triangle, 
+bool triangle_in_cube_threshold(const float_triangle3d& triangle, 
         const float_vector3d& cube_min, const float_vector3d& cube_max, 
         const float_vector3d::value_type threshold) {
     auto make_corner = [&cube_min, cube_max](
